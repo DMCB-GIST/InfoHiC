@@ -2,7 +2,7 @@
 - InfoHiC is a method to predict 3D genome folding from complex DNA rearrangements, which enables the training and validation usage of cancer Hi-C data. InfoHiC provides a decomposed level of interaction views of multiple contigs from the cancer Hi-C matrix. InfoHiC is composed of convolutional neural network (CNNs) that outputs chromatin interactions of genomic contigs and merges them in the total Hi-C views, based on a haplotype-specific copy number (HSCN) encoding that represent genomic variants in the contig matrix.
 
 <p align="center">
-    <img width="1500" src="https://github.com/dmcb-gist/InfoHiC/blob/master/doc/overview.png">
+    <img width="1500" src="https://github.com/DMCB-GIST/InfoHiC/blob/main/doc/overview.png">
   </a>
 </p>
 
@@ -15,7 +15,7 @@
     - ggplot2
     - ggforce
     - grid
-    -SepctralTAD
+    - SepctralTAD
 - python (version 3)
     - tensorflow (version 1.14.0)
     - numpy
@@ -102,6 +102,7 @@ Options:
 wget https://zenodo.org/T47D_InfoGenomeR.tar.gz
 tar -xvf T47D_InfoGenomeR.tar.gz
 cd T47D_InfoGenomeR
+```
 - Process the InfoGenomeR output
 ```
 ### Process the InfoGenomeR output 
@@ -119,25 +120,19 @@ InfoHiC_test InfoGenomeR_output -m HSCN_encoding -w 2Mb -g 0 -c ${InfoHiC_lib}/m
 wget https://zenodo.org/T47D_experiment.tar.gz
 tar -xvf T47D_experiment.tar.gz
 InfoHiC_post InfoGenomeR_output -w 2Mb -m T47D_experiment
-
 ```
 
 <p align="center">
-    <img width="1700" src="https://github.com/dmcb-gist/InfoHiC/blob/master/doc/euler.8.14/karyotypes.png">
+    <img width="400" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/karyotypes.png">
   </a>
 </p>
 
 <p align="center">
-    <img width="1700" src="https://github.com/dmcb-gist/InfoHiC/blob/master/doc/HiC_prediction.png">
+    <img width="700" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/HiC_prediction.png">
   </a>
 </p>
 <p align="center">
-    <img width="1700" src="https://github.com/dmcb-gist/InfoHiC/blob/master/doc/contig_HiC.png">
+    <img width="700" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/contig_HiC.png">
   </a>
 </p>
-
-
-
-
-
 
