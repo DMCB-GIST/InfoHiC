@@ -1,0 +1,93 @@
+#!/bin/bash
+wdir=$PWD;
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -e|--ens)
+      ens="$2"
+      shift
+      shift
+      ;;
+    -s|--se)
+      se="$2"
+      shift
+      shift
+      ;;
+    -t|--te)
+      te="$2"
+      shift
+      shift
+      ;;
+    -v|--version)
+      echo "v.1.0.0"
+      shift
+      shift
+      exit 1
+      ;;
+
+    -h|--help)
+      echo -e "Usage: InfoGenomeR_processing <InfoGenomeR_output> <fasta_file> \n"
+      echo -e "Options:"
+      echo -e  "\t-e, --ens (required)\n \t\t Ensembl annotation
+\t-s, --se (required)\n \t\t Super enhancer annotation
+\t-t, --te (required)\n \t\t Typical enhancer annotation
+\t-h, --help\n
+"
+
+      exit 1
+      ;;
+    *)
+     POSITIONAL+=("$1") # save it in an array for later
+     shift
+     ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+
+InfoGenomeR_output=`readlink -f "$1"`
+echo -e "InfoGenomeR_output = $InfoGenomeR_output"
+if [[ $2 == "" ]] || [[ ! -s $InfoGenomeR_output ]];then
+        echo "InfoGenomeR_output is required"
+        exit 1
+fi
+
+
+fa=`readlink -f "$2"`
+echo -e "fa = $fa"
+if [[ $1 == "" ]] || [[ ! -s $fa ]];then
+        echo "A fasta file is required"
+        exit 1
+fi
+
+
+
+echo "InfoHiC_lib = ${InfoHiC_lib}"
+if [[ ! -s ${InfoHiC_lib}/InfoGenomeR_processing ]];then
+        echo "set the InfoHiC_lib path correctly"
+        exit 1
+fi
+
+
+cd $InfoGenomeR_output\/haplotype
+#perl ${InfoHiC_lib}/InfoGenomeR_processing/hap_fa.pl $fa
+cd $wdir
+cd $InfoGenomeR_output\/karyotypes
+
+
+while read -r -a line;do
+        cd ${line[0]}
+		Rscript ${InfoHiC_lib}/InfoGenomeR_processing/euler_format.R > path1
+		perl ${InfoHiC_lib}/InfoGenomeR_processing/contig_fa.pl $InfoGenomeR_output\/haplotype/hap1.fa $InfoGenomeR_output\/haplotype/hap2.fa
+		cat contigs.bed.sv_window | awk '{print $0"\tlinear"}' > contigs.bed.sv_window.class
+		cat contigs.bed | grep circular  | cut -f1-4 >> contigs.bed.sv_window
+		cat contigs.bed | grep circular  | cut -f1-5 >> contigs.bed.sv_window.class
+		Rscript  ${InfoHiC_lib}/InfoGenomeR_processing/contig_se_index.R $se 
+		Rscript  ${InfoHiC_lib}/InfoGenomeR_processing/contig_sv_index.R
+		Rscript ${InfoHiC_lib}/InfoGenomeR_processing/contig_ens_index.R $ens 
+		Rscript ${InfoHiC_lib}/InfoGenomeR_processing/contig_te_index.R $te
+	cd ../
+done  < euler.list
+

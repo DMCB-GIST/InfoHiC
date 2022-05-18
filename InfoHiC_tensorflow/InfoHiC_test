@@ -1,0 +1,112 @@
+#!/bin/bash
+echo "InfoHiC_lib = ${InfoHiC_lib}"
+if [[ ! -s ${InfoHiC_lib}/InfoGenomeR_processing ]];then
+        echo "set the InfoHiC_lib path correctly"
+        exit 1
+fi
+
+
+id="sample1"
+gpu=0
+out_dir=contig_out
+window=2Mb
+export FRAC=1
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -m|--mode)
+      mode="$2"
+      shift
+      shift
+      ;;
+    -w|--window)
+      window="$2"
+      shift
+      shift
+      ;;
+    -g|--gpu)
+      lambda="$2"
+      shift
+      shift
+      ;;
+    -c|--checkpoint)
+      checkpoint="$2"
+      shift
+      shift
+      ;;
+    -h|--help)
+      echo -e "Usage: InfoHiC_test <InfoGenomeR_output> [options]\n"
+      echo -e "Options:"
+      echo -e  "\t-m, --mode (required)\n \t\t Select the mode (HSCN_encoding, HSCN_decoding)
+\t-w, --window (required) \n \t\t window size (1Mb, 2Mb)
+\t-g, --gpu (required) \n \t\t gpu index (default: 0)
+\t-c, --checkpoint (required) \n \t\t trained model checkpoint
+
+\t-h, --help\n
+"
+
+      exit 1
+      ;;
+    *)
+     POSITIONAL+=("$1") # save it in an array for later
+     shift
+     ;;
+  esac
+done
+
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+InfoGenomeR_output=`readlink -f "$1"`
+echo -e "InfoGenomeR_output = $InfoGenomeR_output"
+if [[ $1 == "" ]] || [[ ! -s $InfoGenomeR_output ]];then
+        echo "the InfoGenomeR_output doesn't exist"
+        exit 1
+fi
+
+
+echo "mode = ${mode}"
+
+if [[ $mode == "HSCN_encoding" ]];then
+	code=$InfoHiC_lib\/InfoHiC_tensorflow/HSCN_encoding/contigs/InfoHiC_test_contig.py
+elif [[ $mode == "HSCN_decoding" ]];then
+        code=$InfoHiC_lib\/InfoHiC_tensorflow/HSCN_decoding/contigs/InfoHiC_test_contig.py
+else
+	echo "select a mode"
+	exit 1
+fi
+if [[ -s ${checkpoint}.meta ]];then
+	echo "checkpoint = ${checkpoint}"
+else
+	echo "the model checkpoint doesn't exist"
+	exit 1
+fi
+
+gpu=0
+
+if [[ $window == "2Mb" ]];then
+	bp_context=2000000
+	num_classes=49
+elif [[$window == "1Mb" ]];then
+        bp_context=1040000
+        num_classes=25
+else
+	echo "select a window size (1Mb, 2Mb)"
+	exit 1
+fi
+
+echo "window_size = ${window}"
+echo "bp_context = $bp_context"
+echo "num_classes = $num_classes"
+
+cd InfoGenomeR_output/karyotypes
+
+while read -r -a line;do
+        cd ${line[0]}
+        if [[ -s contigs.bed.sv_window ]];then
+		python $code --input contigs.bed.sv_window --out_dir $out_dir --name_tag $id --model $checkpoint --genome ./contigs.fa --bp_context $bp_context --add_window 40000 --num_classes $num_classes --bin_size 40000 --run_on gpu --gpu $gpu --padd_ends both --cn_file ./contigs.cn_file
+		python $code --input contigs.bed.sv_window --out_dir $out_dir\_rc --name_tag $id --model $checkpoint --genome ./contigs.fa --bp_context $bp_context --add_window 40000 --num_classes $num_classes --bin_size 40000 --run_on gpu --gpu $gpu --padd_ends both --cn_file ./contigs.cn_file --rc_tag True
+	fi
+	cd ../
+done < euler.list
+
