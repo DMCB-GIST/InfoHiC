@@ -75,6 +75,7 @@ else
 	echo "select a mode"
 	exit 1
 fi
+checkpoint=`readlink -f "$checkpoint"`
 if [[ -s ${checkpoint}.meta ]];then
 	echo "checkpoint = ${checkpoint}"
 else

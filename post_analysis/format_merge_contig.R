@@ -42,7 +42,7 @@ while(i<nrow(t)){
 	
 	
 	i=j+1;
-	print(i)
+#	print(i)
 }
 
 t=t[!duplicated(t),]

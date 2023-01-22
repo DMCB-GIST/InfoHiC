@@ -49,7 +49,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 InfoGenomeR_output=`readlink -f "$1"`
 echo -e "InfoGenomeR_output = $InfoGenomeR_output"
-if [[ $2 == "" ]] || [[ ! -s $InfoGenomeR_output ]];then
+if [[ $1 == "" ]] || [[ ! -s $InfoGenomeR_output ]];then
         echo "InfoGenomeR_output is required"
         exit 1
 fi
@@ -57,7 +57,7 @@ fi
 
 fa=`readlink -f "$2"`
 echo -e "fa = $fa"
-if [[ $1 == "" ]] || [[ ! -s $fa ]];then
+if [[ $2 == "" ]] || [[ ! -s $fa ]];then
         echo "A fasta file is required"
         exit 1
 fi

@@ -6,6 +6,11 @@
   </a>
 </p>
 
+
+# cancer Hi-C prediction Models
+- [Breast_model](https://zenodo.org/record/7559281/files/breast_model.tar.gz)
+- [brain_model](https://zenodo.org/record/7559281/files/brain_model.tar.gz)
+
 # Requirements
 - R (version 3.4.3)
     - plyr
@@ -25,12 +30,18 @@
     - neoloop
     - iced
 - perl
-    - Bio::DB::Fasta;
+    - Bio::DB::Fasta
 
 # Environment settings
 ```
+cd /home/dmcblab ## enter a home or working directory
+git clone https://github.com/DMCB-GIST/InfoHiC.git
+cd InfoHiC
+cd models
+wget https://zenodo.org/record/7559281/files/breast_model.tar.gz && tar -xvf breast_model.tar.gz ## download a model for cancer Hi-C prediction.
 export InfoHiC_lib=/home/dmcblab/InfoHiC
 export PATH=$InfoHiC_lib/InfoGenomeR_processing:$InfoHiC_lib/InfoHiC_tensorflow:$InfoHiC_lib/post_analysis:$PATH
+export FRAC=0.9 ## flexible memory usage (per_process_gpu_memory_fraction=$FRAC). The minimum for testing is 7GB.
 ```
 
 # Inputs
@@ -99,25 +110,26 @@ Options:
 
 # Tutorial 1 (T47D)
 ```
-wget https://zenodo.org/T47D_InfoGenomeR.tar.gz
-tar -xvf T47D_InfoGenomeR.tar.gz
-cd T47D_InfoGenomeR
+wget https://zenodo.org/record/7559305/files/tutorial3_v2.tar.gz ## T47D
+tar -xvf tutorial3_v2.tar.gz
+cd tutorial3_v2/total_job_test
 ```
 - Process the InfoGenomeR output
 ```
 ### Process the InfoGenomeR output 
-InfoGenomeR_processing output -e ${InfoHiC_lib}/humandb/hg19_ensGene.txt -s SE_package.bed.BRCA.rf -t TE_package.bed.BRCA.rf
+ref=GRCh37.fa ## reference genome fasta file without the chr prefix.
+InfoGenomeR_processing InfoGenomeR_output $ref -e ${InfoHiC_lib}/humandb/hg19_ensGene.txt -s ${InfoHiC_lib}/humandb/SE_package.bed.BRCA.rf -t ${InfoHiC_lib}/humandb/TE_package.bed.BRCA.rf
 ```
 - Predict Hi-C matrix
 ```
 ### Predict Hi-C matrix
-InfoHiC_test InfoGenomeR_output -m HSCN_encoding -w 2Mb -g 0 -c ${InfoHiC_lib}/models/T47D_transfer_2Mb/best_checkpoint
+InfoHiC_test InfoGenomeR_output -m HSCN_encoding -w 2Mb -g 0 -c ${InfoHiC_lib}/models/breast_model/T47D_transfer_2Mb
 ```
 
 - perform a post analysis
 ```
 ### post analysis
-wget https://zenodo.org/T47D_experiment.tar.gz
+wget https://zenodo.org/record/7559345/files/T47D_experiment.tar.gz
 tar -xvf T47D_experiment.tar.gz
 InfoHiC_post InfoGenomeR_output -w 2Mb -m T47D_experiment
 ```
