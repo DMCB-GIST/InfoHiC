@@ -7,7 +7,7 @@
 </p>
 
 
-# cancer Hi-C prediction Models
+# Cancer Hi-C prediction models
 - [Breast_model](https://zenodo.org/record/7559281/files/breast_model.tar.gz)
 - [Brain_model](https://zenodo.org/record/7559281/files/brain_model.tar.gz)
 
