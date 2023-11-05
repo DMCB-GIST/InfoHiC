@@ -7,7 +7,7 @@ fi
 
 
 target="sample1"
-window=2Mb
+window_size=2Mb
 true_matrix="NA"
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -w|--window)
-      window="$2"
+      window_size="$2"
       shift
       shift
       ;;
@@ -66,7 +66,7 @@ while read -r -a l;do
 	if [ -s "ref.sv_window" ];then
 		s=`echo ${l[0]} | awk '{n=split($1,f,"."); for(i=2;i<=n;i++){printf "%s\t", f[i];}; printf "\n";}'`
 		${InfoHiC_lib}/post_analysis/true_format.sh "$s" $cis_path $trans_path  
-		${InfoHiC_lib}/post_analysis/test_format_2Mb.sh $window.class $target 
+		${InfoHiC_lib}/post_analysis/test_format.sh $window.class $target $window_size
 		Rscript ${InfoHiC_lib}/post_analysis/format.R $target > 0.output 
 		Rscript  ${InfoHiC_lib}/post_analysis/format_merge.R 
 		mkdir -p ref_window 
@@ -80,8 +80,8 @@ while read -r -a l;do
 	while read -r -a line;do
 		s=${line[1]}
 		e=$((${line[2]}-1))
-		cat contig_out/class_predictions_$id\_$i\_${line[0]}_$s\_$e.txt |  awk -f ${InfoHiC_lib}/post_analysis/test_f_2Mb.awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' > $i.output
-		cat contig_out_rc/class_predictions_$id\_$i\_${line[0]}_$s\_$e.txt |  awk -f ${InfoHiC_lib}/post_analysis/test_rc_2Mb.awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' >> $i.output
+		cat contig_out/class_predictions_$id\_$i\_${line[0]}_$s\_$e.txt |  awk -f ${InfoHiC_lib}/post_analysis/test_f_$window_size.awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' > $i.output
+		cat contig_out_rc/class_predictions_$id\_$i\_${line[0]}_$s\_$e.txt |  awk -f ${InfoHiC_lib}/post_analysis/test_rc_$window_size.awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' >> $i.output
 		Rscript ${InfoHiC_lib}/post_analysis/format_merge_contig.R $i.output $i.output.format
 		cat $i.output.format  |  awk '{if($2>0 && $4>0) print $0}' > $i.output.format.v
 		Rscript ${InfoHiC_lib}/post_analysis/tad.R $i.output.format.v 20
