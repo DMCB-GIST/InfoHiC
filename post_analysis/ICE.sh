@@ -1,6 +1,14 @@
 #!/bin/bash
 
 i=$1
+if [[ $2 == "2Mb" ]];then
+	window_size=2000000
+elif [[ $2 == "1Mb" ]];then
+	window_size=1000000
+else
+	echo "invalid window size"
+	exit 1;
+fi
 
 
 
@@ -9,6 +17,7 @@ i=$1
 cat $i.output.format.v | awk '{if($5>0){print $2/40000"\t"$4/40000"\t"$5}}' > $i.output.m
 contig_name=`head -n 1 $i.output.format.v | cut -f1`
 python ${InfoHiC_lib}/post_analysis/ICE.py $i.output.m
+Rscript ${InfoHiC_lib}/post_analysis/ICE_filter.R $i.output_ice.m $window_size 40000
 cat $i.output_ice.m | awk '{if($1<=$2){print "'${contig_name}'\t"($1)*40000"\t'${contig_name}'\t"($2)*40000"\t"$3}}' > $i.output.m.format
 cat $i.output.m.format  |  awk '{if($2>0 && $4>0) print $0}' > $i.output.m.format.v
 Rscript ${InfoHiC_lib}/post_analysis/tad.R $i.output.m.format.v 50

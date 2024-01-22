@@ -8,11 +8,18 @@
 
 
 # Cancer Hi-C prediction models
-- [Breast_model](https://zenodo.org/record/7559281/files/breast_model.tar.gz)
-- [Brain_model](https://zenodo.org/record/7559281/files/brain_model.tar.gz)
+- Brain
+    - [NPC 1Mb CSCN decoding 40kb](https://zenodo.org/records/10547043/files/brain_model_1Mb.tar.gz)
+    - [NPC 2Mb CSCN decoding 40kb](https://zenodo.org/record/7559281/files/breast_model.tar.gz)
+- Breast
+    - [T47D 1Mb CSCN encoding 40kb](https://zenodo.org/records/10547765/files/breast_model_1Mb.tar.gz)
+    - [T47D 2Mb CSCN encoding 40kb](https://zenodo.org/record/7559281/files/brain_model.tar.gz)
+
+- Hematopoietic
+    - [K562 1Mb CSCN encoding 10kb] (https://zenodo.org/records/10547768/files/Hematopoietic_model_1Mb.tar.gz)
 
 # Requirements
-- R (version 3.4.3)
+- R (version 3.6.3)
     - plyr
     - dplyr
     - RColorBrewer
@@ -21,27 +28,30 @@
     - ggforce
     - grid
     - SepctralTAD
-- python (version 3)
-    - tensorflow (version 1.14.0)
-    - numpy
+- python (version 3.8)
+    - tensorflow (version 2.11.0)
+    - numpy (version 1.22.0)
     - pysam
     - pickle
     - scipy
     - neoloop
-    - iced
+    - iced (version 0.5.10)
+    - joblib
+    - sklearn
 - perl
     - Bio::DB::Fasta
+- samtools
 
 # Environment settings
 ```
-cd /home/dmcblab ## enter a home or working directory
+cd /home/dmcblab # enter a home or working directory
 git clone https://github.com/DMCB-GIST/InfoHiC.git
 cd InfoHiC
 cd models
-wget https://zenodo.org/record/7559281/files/breast_model.tar.gz && tar -xvf breast_model.tar.gz ## download a model for cancer Hi-C prediction.
+./download.sh # download a model for cancer Hi-C prediction.
 export InfoHiC_lib=/home/dmcblab/InfoHiC
 export PATH=$InfoHiC_lib/InfoGenomeR_processing:$InfoHiC_lib/InfoHiC_tensorflow:$InfoHiC_lib/post_analysis:$PATH
-export FRAC=0.9 ## flexible memory usage (per_process_gpu_memory_fraction=$FRAC). The minimum for testing is 7GB.
+export FRAC=0.9 # flexible memory usage (per_process_gpu_memory_fraction=$FRAC). The minimum for testing is 7GB.
 ```
 
 # Inputs
@@ -71,13 +81,6 @@ Options:
         -t, --te (required)
                  Typical enhancer annotation
         -h, --help
-```
-
-- InfoHiC_training
-```
-Usage: InfoHiC_training <InfoGenomeR_output> <cancer_HiC_matrix> [options]
-
-Options:
 ```
 
 - InfoHiC_test
@@ -134,17 +137,16 @@ tar -xvf T47D_experiment.tar.gz
 InfoHiC_post InfoGenomeR_output -w 2Mb -m T47D_experiment
 ```
 
+```
+cd InfoGenomeR_output/karyotypes/euler.8.14/
+# karyotypes.pdf 
 <p align="center">
     <img width="400" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/karyotypes.png">
   </a>
 </p>
-
+# all.pdf showing the InfoHiC prediction result with Hi-C experiment 
 <p align="center">
     <img width="700" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/HiC_prediction.png">
-  </a>
-</p>
-<p align="center">
-    <img width="700" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/contig_HiC.png">
   </a>
 </p>
 

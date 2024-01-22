@@ -132,7 +132,7 @@ g=ggplot(data = t, aes(x=V1, y=V2, fill=V3)) + geom_tile(width=40000, height=400
 
 if(args[3]!="null" && file.exists(args[3]) && file.info(args[3])$size != 0){
 
-	g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5, colour=V6),data=td_line, inherit.aes=F,size=0.1)
+	g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5, colour=V6),data=td_line, inherit.aes=F,size=0.1,lwd=0.5)
 #	g=g+geom_text(aes(x=V2, y=V3, label=V2), data=td_line, inherit.aes=F, angle=45, size=0.2)
 
 }
@@ -143,30 +143,30 @@ if(args[8]!="null"){
 		le_line_gene=le_line[le_line[,6] == args[8],]
 		le_line_gene[,2] = le_line_gene[,2] + 400000
 		le_line_gene[,3] = le_line_gene[,3] - 400000
-		g=g+geom_text(aes(x=V2, y=V3, label=V6), data=le_line_gene, inherit.aes=F,angle=-45,size=0.2)
+#		g=g+geom_text(aes(x=V2, y=V3, label=V6), data=le_line_gene, inherit.aes=F,angle=-45,size=0.2)
 		sub_le_line=le_line[le_line[,6]==args[8],];
 		if(args[5]!="null"){
-			g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=sub_le_line, inherit.aes=F, color="black")
+			g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=sub_le_line, inherit.aes=F, color="gray")
 		}
 
 	}else{
                 le_line_gene=le_line
 		le_line_gene[,2] = le_line_gene[,2] + 400000
 		le_line_gene[,3] = le_line_gene[,3] - 400000
-		g=g+geom_text(aes(x=V2, y=V3, label=V6), data=le_line_gene, inherit.aes=F,angle=-45,size=0.2)
+#		g=g+geom_text(aes(x=V2, y=V3, label=V6), data=le_line_gene, inherit.aes=F,angle=-45,size=0.2)
 		if(args[5]!="null"){
-			g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=le_line, inherit.aes=F, color="black")
+			g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=le_line, inherit.aes=F, color="gray")
 		}
 
 	}
 }
 if(args[6]!="null" && file.exists(args[6]) && file.info(args[6])$size != 0){
 
-	g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=lh_line, inherit.aes=F, color="yellow")
+	g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=lh_line, inherit.aes=F, color="#C03B90")
 }
 if(args[7]!="null" && file.exists(args[7]) && file.info(args[7])$size != 0){
 
-	g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=lte_line, inherit.aes=F, color="yellow")
+	g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=lte_line, inherit.aes=F, color="#00B8E0")
 }
 
 
@@ -191,7 +191,7 @@ if(args[4]!="null" && file.exists(args[4]) &&  file.info(args[4])$size != 0){
 		fli=fli+1
 	}
 
-	g=g+geom_segment(aes(x=V1, y=V2, xend=V3, yend=V4), data=fus_line, inherit.aes=F,color="white",size=0.1)
+	g=g+geom_segment(aes(x=V1, y=V2, xend=V3, yend=V4), data=fus_line, inherit.aes=F,color="white",size=0.1, lwd=0.5)
 #	g=g+geom_text(aes(x=V1, y=V2, label=V1), data=fus_line, inherit.aes=F, angle=45, size=0.2)
 }
 
@@ -199,7 +199,9 @@ if(args[9]!="null" && file.exists(args[9]) &&  file.info(args[9])$size != 0){
 	library("ggforce")
 	loop=read.table(args[9],stringsAsFactors=F)
 	loop$V3=40000
-	g=g+geom_circle(aes(x0=V1, y0=V2, r=V3),color='blue', data= loop,inherit.aes=F)
+	g=g+geom_circle(aes(x0=V1, y0=V2, r=V3),color='#18489C', data= loop,inherit.aes=F)
 }
-g
+g=g+theme_void() + theme(legend.position="none")
+
+print(g, vp=viewport(width = unit(0.5, "npc"),  height = unit(0.5, "npc"), angle = -45))
 dev.off()

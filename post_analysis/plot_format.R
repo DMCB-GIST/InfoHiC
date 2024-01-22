@@ -7,6 +7,7 @@ gap_view=T
 M_plot_gap=1000000
 max_depth=as.numeric(args[2])
 
+
 if(mode=="test"){
 	t=read.table("0.output.format")
 }else{
@@ -176,9 +177,21 @@ if(mode=="all"){
 }
 
 
-g=ggplot(data = t, aes(x=V2, y=V4, fill=V5)) +
+names(t)[2]="Coordinate1"
+names(t)[4]="Coordinate2"
+names(t)[5]="HiC_intensity"
+
+if(mode=="all"){
+        title="InfoHiC prediction (upper diagonal) vs HiC experiment (lower diagonal)"
+}else if(mode=="test"){
+        title="InfoHiC prediction"
+}else if(mode=="true"){
+        title="HiC experiment"
+}
+
+g=ggplot(data = t, aes(x=Coordinate1, y=Coordinate2, fill=HiC_intensity)) +
           geom_tile(width=40000, height=40000) +  scale_fill_gradientn(colours=brewer.pal(9, 'YlOrRd')) + theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(), 
-                                                                                           panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + coord_equal()
+                                                                                           panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + coord_equal() + labs(title=title)
 
 
 #g=g+theme(panel.background=element_rect(fill=brewer.pal(9, 'YlOrRd')[1]))

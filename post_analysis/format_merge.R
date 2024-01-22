@@ -48,7 +48,7 @@ while(i<nrow(t)){
 	
 	
 	i=j+1;
-	print(i)
+#	print(i)
 }
 
 t=data.frame(V1=t1,V2=t2,V3=t3,V4=t4,V5=t5)

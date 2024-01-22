@@ -10,7 +10,9 @@ id="sample1"
 gpu=0
 out_dir=contig_out
 window=2Mb
-export FRAC=1
+if [[ -z "$FRAC" ]];then
+	export FRAC=0.9
+fi
 
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -26,7 +28,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -g|--gpu)
-      lambda="$2"
+      gpu="$2"
       shift
       shift
       ;;
@@ -83,12 +85,10 @@ else
 	exit 1
 fi
 
-gpu=0
-
 if [[ $window == "2Mb" ]];then
 	bp_context=2000000
 	num_classes=49
-elif [[$window == "1Mb" ]];then
+elif [[ $window == "1Mb" ]];then
         bp_context=1040000
         num_classes=25
 else
@@ -100,7 +100,7 @@ echo "window_size = ${window}"
 echo "bp_context = $bp_context"
 echo "num_classes = $num_classes"
 
-cd InfoGenomeR_output/karyotypes
+cd $InfoGenomeR_output\/karyotypes
 
 while read -r -a line;do
         cd ${line[0]}
