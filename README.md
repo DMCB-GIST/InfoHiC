@@ -16,7 +16,7 @@
     - [T47D 2Mb CSCN encoding 40kb](https://zenodo.org/record/7559281/files/brain_model.tar.gz)
 
 - Hematopoietic
-    - [K562 1Mb CSCN encoding 10kb] (https://zenodo.org/records/10547768/files/Hematopoietic_model_1Mb.tar.gz)
+    - [K562 1Mb CSCN encoding 10kb](https://zenodo.org/records/10547768/files/Hematopoietic_model_1Mb.tar.gz)
 
 # Requirements
 - R (version 3.6.3)
@@ -28,16 +28,16 @@
     - ggforce
     - grid
     - SepctralTAD
-- python (version 3.8)
+- python (version 3.8.0) 
     - tensorflow (version 2.11.0)
     - numpy (version 1.22.0)
-    - pysam
+    - pysam (version 0.17.0)
     - pickle
-    - scipy
-    - neoloop
+    - scipy (version 1.5.0)
+    - neoloop (version 0.2.3)
     - iced (version 0.5.10)
     - joblib
-    - sklearn
+    - sklearn (version 0.22)
 - perl
     - Bio::DB::Fasta
 - samtools
@@ -112,6 +112,7 @@ Options:
 ```
 
 # Tutorial 1 (T47D)
+- Download a tutorial file
 ```
 wget https://zenodo.org/record/7559305/files/tutorial3_v2.tar.gz ## T47D
 tar -xvf tutorial3_v2.tar.gz
@@ -119,7 +120,7 @@ cd tutorial3_v2/total_job_test
 ```
 - Process the InfoGenomeR output
 ```
-### Process the InfoGenomeR output 
+### Process the InfoGenomeR output
 ref=GRCh37.fa ## reference genome fasta file without the chr prefix.
 InfoGenomeR_processing InfoGenomeR_output $ref -e ${InfoHiC_lib}/humandb/hg19_ensGene.txt -s ${InfoHiC_lib}/humandb/SE_package.bed.BRCA.rf -t ${InfoHiC_lib}/humandb/TE_package.bed.BRCA.rf
 ```
@@ -131,22 +132,21 @@ InfoHiC_test InfoGenomeR_output -m HSCN_encoding -w 2Mb -g 0 -c ${InfoHiC_lib}/m
 
 - perform a post analysis
 ```
-### post analysis
+- post analysis
 wget https://zenodo.org/record/7559345/files/T47D_experiment.tar.gz
 tar -xvf T47D_experiment.tar.gz
 InfoHiC_post InfoGenomeR_output -w 2Mb -m T47D_experiment
+cd InfoGenomeR_output/karyotypes/euler.8.14/
 ```
 
-```
-cd InfoGenomeR_output/karyotypes/euler.8.14/
-# karyotypes.pdf 
+- karyotypes.pdf
 <p align="center">
     <img width="400" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/karyotypes.png">
   </a>
 </p>
-# all.pdf showing the InfoHiC prediction result with Hi-C experiment 
+
+- all.pdf 
 <p align="center">
     <img width="700" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/HiC_prediction.png">
   </a>
 </p>
-
