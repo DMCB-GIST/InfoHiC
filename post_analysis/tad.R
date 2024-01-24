@@ -14,7 +14,7 @@ tryCatch({
 	tads=SpectralTAD(t,chr=t[1,1], levels = 3, qual_filter = FALSE, window_size=ws)
 	}, error=function(e){err=1});
 
-if(err==0){
+if(err==0 && exists("tads")){
 	mn= min(c(t[,1],t[,2])) + window_size/2
 	mx=max(c(t[,1],t[,2])) - window_size/2
 

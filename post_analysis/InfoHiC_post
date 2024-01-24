@@ -90,7 +90,7 @@ while read -r -a l;do
 		cat $contig_rc |  awk -f ${InfoHiC_lib}/post_analysis/test_rc_$window_size.awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' >> $i.output
 		Rscript ${InfoHiC_lib}/post_analysis/format_merge_contig.R $i.output $i.output.format
 		cat $i.output.format  |  awk '{if($2>0 && $4>0) print $0}' > $i.output.format.v
-		Rscript ${InfoHiC_lib}/post_analysis/tad.R $i.output.format.v 20
+		Rscript ${InfoHiC_lib}/post_analysis/tad.R $i.output.format.v 50
 		cat contigs.index.sv | awk '{if($1=="'${line[0]}'" && $2 >= '"$s"' && $2<= '"$e"' ) print $0}' > $i.index.sv
 		cat contigs.index.ens | awk '{ if($3=="'${line[0]}'" && $5 >= '"$s"' && $6<= '"$e"' ) print $0}' > $i.index.ens
 		cat contigs.index.se| awk '{ if($3=="'${line[0]}'" && $5 >= '"$s"' && $6<= '"$e"' ) print $0}' > $i.index.se
@@ -98,11 +98,17 @@ while read -r -a l;do
 		Rscript ${InfoHiC_lib}/post_analysis/plot_withtad_withloop.R $i.output.format.v 40 $i.output.format.v.tad $i.index.sv $i.index.ens $i.index.se  $i.index.te all null
 
 		${InfoHiC_lib}/post_analysis/ICE.sh $i $window_size
+		if [[ ! -s  $i.output_ice.m ]];then
+                        i=$(($i+1))
+			continue;
+		fi
 		python ${InfoHiC_lib}/post_analysis/neoloop_ICE.py $i > $i.index.neoloop.m
-		if [[ -s $i.index.sv ]];then
+		if [[ -s $i.index.sv ]] && [[ -s $i.index.neoloop.m ]];then
 			Rscript ${InfoHiC_lib}/post_analysis/neoloop_ICE_nearsv.R $i
 		fi
-		Rscript ${InfoHiC_lib}/post_analysis/neoloop_ICE.R $i > $i.index.neoloop.ens.m
+		if [[ -s $i.index.neoloop.m ]];then
+			Rscript ${InfoHiC_lib}/post_analysis/neoloop_ICE.R $i > $i.index.neoloop.ens.m
+		fi
 		Rscript ${InfoHiC_lib}/post_analysis/plot_withtad_withloop.R $i.output.m.format.v 40 $i.output.m.format.v.tad $i.index.sv $i.index.ens $i.index.se  $i.index.te all $i.index.neoloop.m
 		i=$(($i+1))
 	done < contigs.bed.sv_window

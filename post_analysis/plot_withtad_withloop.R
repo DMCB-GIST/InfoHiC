@@ -203,5 +203,7 @@ if(args[9]!="null" && file.exists(args[9]) &&  file.info(args[9])$size != 0){
 }
 g=g+theme_void() + theme(legend.position="none")
 
-print(g, vp=viewport(width = unit(0.5, "npc"),  height = unit(0.5, "npc"), angle = -45))
+pushViewport(viewport(name = "rotate", angle = -45, clip="off", width = 0.7, height = 0.7))
+options(warn=-1)
+print(g, vp="rotate")
 dev.off()
