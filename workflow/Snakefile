@@ -4,7 +4,11 @@ wildcard_constraints:
 	window="\\d+",
 	split_idx="\\d+",
 	split_rate="[0-9]*.[0-9]+|[0-9]+",
-	cancer_type="BRAIN|BRCA"
+	cancer_type="BRAIN|BRCA",
+	gpu="\\d+",
+	mode="CSCN_encoding",
+	epoch="\\d+",
+
 
 rule all:
 
@@ -51,3 +55,16 @@ rule InfoGenomeR_processing:
                 "envs/InfoHiC.yaml"
         shell:  
                 "workflow/scripts/InfoGenomeR_processing.sh {input.infogenomer_input} {input.ref} {wildcards.cancer_type}"
+
+rule InfoHiC_training:
+        input:  
+                hic_split_input=rules.hic_split.output.hic_split_output,
+                infogenomer_processing_input=rules.InfoGenomeR_processing.output.infogenomer_processing_output,
+                seed_file="{root}/seed_file/saved_conv_weights_dhw_5layer_1k_pool.npz"
+        output: 
+                InfoHiC_training_output="{root}/InfoHiC_training.{cancer_type}.{mode}.hic_{resolution}.window_{window}.split{split_idx}_rate{split_rate}.gpu{gpu}.epoch{epoch}"
+        conda:  
+                "envs/InfoHiC.yaml"
+        shell:  
+                "workflow/scripts/InfoHiC_training.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.infogenomer_processing_input} {input.seed_file} {wildcards.epoch}"
+
