@@ -1,0 +1,12 @@
+.cursor-pointer { cursor:pointer; }
+
+.dialog-title{ font-weight:bold; }
+.gene-symbol-list{ height:25px; line-height:25px; margin-top:1px; padding:0px;background:none;cursor:pointer;}
+.gene-symbol-list-gene{ padding: 0px 10px; height:25px; text-align:center; background:#f3f8fa; font-weight:bold; margin-left:5px; margin-right:0px; float:left; border:1px solid gray; color:#213d64}
+.gene-symbol-list-chrom{padding: 0px 10px; height:25px; text-align:left; text-indent:5px; background:#fff; font-weight:bold; margin-left:0px; margin-right:0px; float:left;border:1px solid gray;}
+.gene-symbol-list-value{display:none;}
+
+.basic-font-size{font-size:14px;}
+
+.download-img{cursor: pointer; background: url(../../images/download_black.png) center no-repeat; height:20px; background-size: 13px; width: 20px; margin:0 auto; display: block;}
+.download-img:hover{background: url(../../images/download_green.png) center no-repeat; height:20px; background-size: 13px;}

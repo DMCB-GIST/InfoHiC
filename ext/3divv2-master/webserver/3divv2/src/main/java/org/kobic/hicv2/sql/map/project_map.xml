@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.kobic.hicv2.project.mapper.ProjectMapper">
+	<select id="getGeneLocus4AutoComplete" parameterType="java.lang.String" resultType="org.kobic.hicv2.project.vo.GeneLocusVo">
+		SELECT
+			name
+			, chr
+			, start
+			, end
+			, strand
+			, db
+		FROM I1_IntegratedGeneInfo
+		WHERE name LIKE CONCAT(#{keyword}, '%')
+		ORDER BY name, db
+	</select>
+	
+	<select id="getOptionGeneAutoComplete"  parameterType="java.util.Map" resultType="org.kobic.hicv2.project.vo.GeneLocusVo">
+		SELECT
+			name
+		FROM I1_IntegratedGeneInfo
+		WHERE name LIKE CONCAT(#{keyword}, '%')
+		<if test="dbList != null">
+		AND db IN
+			<foreach collection="dbList" item="item"  open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		GROUP BY name
+		ORDER BY name
+	</select>
+	
+	<select id="getOptionGene"  parameterType="java.util.Map" resultType="org.kobic.hicv2.project.vo.GeneLocusVo">
+		SELECT
+			name
+		FROM I1_IntegratedGeneInfo
+		<if test="list != null">
+			WHERE name IN
+				<foreach collection="list" item="item"  open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+		</if>
+		GROUP BY name
+		ORDER BY name
+	</select>
+	
+	<select id="getGencodeV34Genes" parameterType="java.util.List" resultType="org.kobic.hicv2.project.vo.GeneVo">
+		SELECT
+			seqname 	AS chrom
+			, name2		AS symbol
+			, start 	AS start
+			, end		AS end
+			, strand	AS strand
+		from I2_Gencode_V34
+		WHERE 1=1
+		AND (
+			<if test="regions != null">
+				<foreach item="region" index="index" collection="regions" open='(' separator=',' close=') OR' >
+					seqname = #{region.chrom} AND start <![CDATA[>=]]> ${region.startBin} AND txEnd <![CDATA[<= ]]> ${region.endBin}
+				</foreach>
+			</if>
+			1=2
+		)
+	</select>
+
+	<select id="getRefseqGenes" parameterType="java.util.List" resultType="org.kobic.hicv2.project.vo.GeneVo">
+		SELECT
+			seqname 	AS chrom
+			, name2		AS symbol
+			, start 	AS start
+			, end		AS end
+			, strand	AS strand
+		from I2_Gencode_V34
+		WHERE 1=1
+		AND (
+			<if test="regions != null">
+				<foreach item="region" index="index" collection="regions" open='(' separator=',' close=') OR' >
+					seqname = #{region.chrom} AND start <![CDATA[>=]]> ${region.startBin} AND txEnd <![CDATA[<= ]]> ${region.endBin}
+				</foreach>
+			</if>
+			1=2
+		)
+	</select>
+	
+	<select id="getDownloadFileList" parameterType="java.lang.String" resultType="org.kobic.hicv2.project.vo.DownloadFileVo">
+		SELECT 
+			id
+			, celline_name
+			, sample_name
+			, file_size
+			, cutoff
+			, file_path
+			, CASE
+				WHEN reference LIKE '%PMID%' THEN CONCAT(SUBSTRING_INDEX(reference,'PMID:',1),'PMID: ','&lt;a href="https://www.ncbi.nlm.nih.gov/pubmed/?term=',SUBSTRING_INDEX(SUBSTRING_INDEX(reference,'(PMID: ',-1),')',1),'" target="_blank" style="color:#3636ca !important;" &gt;',SUBSTRING_INDEX(SUBSTRING_INDEX(reference,'(PMID: ',-1),')',1),'&lt;/a&gt;)')
+				ELSE reference
+			END reference
+			, geo_accession
+			, super_enhancer_path
+		FROM HiCaptureSeq.CellineInfo_download
+		<if test="keyword !=  null">
+			WHERE MATCH(celline_name, reference, geo_accession) AGAINST( CONCAT('*',#{keyword},'*') IN BOOLEAN MODE )
+		</if>
+		ORDER BY id, cutoff DESC
+	</select>
+</mapper>

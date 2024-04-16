@@ -18,6 +18,17 @@
 - Hematopoietic
     - [K562 1Mb CSCN encoding 10kb](https://zenodo.org/records/10547768/files/Hematopoietic_model_1Mb.tar.gz)
 
+# Snakemake
+- We recommended to use Snakemake for running InfoHiC workflows.
+```
+wget https://github.com/conda-forge/miniforge/releases/download/24.1.2-0/Miniforge3-Linux-x86_64.sh
+bash Miniforge3-Linux-x86_64.sh 
+mamba create -c conda-forge -c bioconda -n snakemake snakemake
+conda config --set channel_priority strict
+snakemake --cores 40 --use-conda example_output/hic_40000/window_1040000.split1_rate0.1
+```
+
+
 # Requirements
 - R (version 3.6.3)
     - plyr

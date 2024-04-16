@@ -1,0 +1,53 @@
+wildcard_constraints:
+	root="[^/]+",
+	resolution="\\d+",
+	window="\\d+",
+	split_idx="\\d+",
+	split_rate="[0-9]*.[0-9]+|[0-9]+",
+	cancer_type="BRAIN|BRCA"
+
+rule all:
+
+rule hic_mapping:
+	input:
+		ref="{root}/ref/hg19.fa",
+		hic_fq1="{root}/hic_reads/1.fastq.gz",
+		hic_fq2="{root}/hic_reads/2.fastq.gz"
+	output:
+		hic_output=directory("{root}/hic_{resolution}/3div")
+	conda:
+		"envs/3div.yaml"
+	shell:
+		"workflow/scripts/hic_mapping.sh {input.ref} {input.hic_fq1} {input.hic_fq2} {wildcards.resolution} {wildcards.root}/hic_{wildcards.resolution}"
+
+rule hic_formatter:
+        input:  
+                hic_input=rules.hic_mapping.output.hic_output
+        output: 
+                hic_format_output=directory("{root}/hic_{resolution}/window_{window}")
+        conda:  
+                "envs/3div.yaml"
+        shell:  
+                "workflow/scripts/hic_formatter.sh {wildcards.resolution} {wildcards.window} {input.hic_input} {output.hic_format_output}"
+
+rule hic_split:
+        input:
+                ref="{root}/ref/ucsc.hg19.fasta",
+                hic_format_input=rules.hic_formatter.output.hic_format_output
+        output: 
+               hic_split_output=directory("{root}/hic_{resolution}/window_{window}.split{split_idx}_rate{split_rate}")
+        conda:  
+                "envs/3div.yaml"
+        shell:  
+                "workflow/scripts/hic_split.sh {input.hic_format_input} {wildcards.resolution} {wildcards.window} {wildcards.split_rate} {input.ref} {output.hic_split_output}"
+
+rule InfoGenomeR_processing:
+        input:  
+                ref="{root}/ref/hg19.fa",
+                infogenomer_input="{root}/InfoGenomeR_output"
+        output: 
+                infogenomer_processing_output=directory("{root}/InfoGenomeR_output.{cancer_type}")
+        conda:  
+                "envs/InfoHiC.yaml"
+        shell:  
+                "workflow/scripts/InfoGenomeR_processing.sh {input.infogenomer_input} {input.ref} {wildcards.cancer_type}"

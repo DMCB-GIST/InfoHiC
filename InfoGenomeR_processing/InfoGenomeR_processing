@@ -76,9 +76,8 @@ perl ${InfoHiC_lib}/InfoGenomeR_processing/hap_fa.pl $fa
 cd $wdir
 cd $InfoGenomeR_output\/karyotypes
 
-
 while read -r -a line;do
-        cd ${line[0]}
+ 	cd ${line[0]}
 		Rscript ${InfoHiC_lib}/InfoGenomeR_processing/euler_format.R > path1
 		perl ${InfoHiC_lib}/InfoGenomeR_processing/contig_fa.pl $InfoGenomeR_output\/haplotype/hap1.fa $InfoGenomeR_output\/haplotype/hap2.fa
 		cat contigs.bed.sv_window | awk '{print $0"\tlinear"}' > contigs.bed.sv_window.class
@@ -90,4 +89,3 @@ while read -r -a line;do
 		Rscript ${InfoHiC_lib}/InfoGenomeR_processing/contig_te_index.R $te
 	cd ../
 done  < euler.list
-

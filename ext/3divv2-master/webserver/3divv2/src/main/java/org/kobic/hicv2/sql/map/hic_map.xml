@@ -1,0 +1,875 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.kobic.hicv2.hic.mapper.HiCMapper">
+	
+	<resultMap id="HiCInteractionPairCommonVoMap" type="org.kobic.hicv2.hic.vo.HiCInteractionPairCommonVo">
+		<result property="startPt" column="startPt" />
+		<result property="endPt" column="endPt" />
+		<result property="maxFreq" column="maxFreq" />
+		<result property="binSize" column="binSize" />
+		<result property="windowSize" column="windowSize" />
+	</resultMap>
+	
+	<resultMap id="HiCInteractionPairVoMap" type="org.kobic.hicv2.hic.vo.HiCInteractionPairVo">
+		<result property="bin" column="bin" />
+		<result property="interactionPair" column="interactionPair" />
+		<result property="count" column="count" />
+		<result property="colOrder" column="colOrder" />
+		<result property="rowOrder" column="rowOrder" />
+	</resultMap>
+	
+	<resultMap id="HeatMapVoMap" type="org.kobic.hicv2.hic.vo.HeatMapVo">
+		<result property="bin" column="bin" />
+		<result property="interactionPair" column="interactionPair" />
+		<result property="count" column="count" />
+		<result property="binLength" column="binLength" />
+		<result property="interactionPairLength" column="interactionPairLength" />
+	</resultMap>
+
+	<resultMap id="LocusVoMap" type="org.kobic.hicv2.hic.vo.LocusVo">
+		<result property="chrom" column="chrom" />
+		<result property="txStart" column="txStart" />
+		<result property="txEnd" column="txEnd" />
+		<result property="strand" column="strand" />
+	</resultMap>
+
+	<resultMap id="InteractionVoMap" type="org.kobic.hicv2.hic.vo.InteractionVo">
+		<result property="chr" column="chr" />
+		<result property="bin1" column="bin1" />
+		<result property="bin2" column="bin2" />
+		<result property="count" column="count" />
+		<result property="bin2Len" column="bin2Len" />
+		<result property="foldChange" column="foldChange" />
+		<result property="bin1_idx" column="bin1_idx" />
+		<result property="bin2_idx" column="bin2_idx" />
+		<!-- <result property="all_capture_res" column="all_capture_res" /> -->
+	</resultMap>
+	
+	<resultMap id="GeneVoMap" type="org.kobic.hicv2.hic.vo.GeneVo">
+		<result property="num" column="num" />
+		<result property="name" column="name" />
+		<result property="nameLength" column="nameLength" />
+		<result property="chrom" column="chrom" />
+		<result property="txStart" column="txStart" />
+		<result property="txEnd" column="txEnd" />
+		<result property="tableNM" column="tableNM" />
+		<result property="locus" column="locus" />
+		<result property="strand" column="strand" />
+	</resultMap>
+
+	<resultMap id="SampleVoMap" type="org.kobic.hicv2.hic.vo.SampleVo">
+		<result property="num" column="num" />
+		<result property="id" column="id" />
+		<result property="celline_name" column="celline_name" />
+		<result property="table_name" column="table_name" />
+		<result property="valid_yn" column="valid_yn" />
+	</resultMap>
+	
+	<resultMap id="TadVoMap" type="org.kobic.hicv2.hic.vo.H1EscTadVo">
+		<result property="chr" column="chr"/>
+		<result property="start" column="start"/>
+		<result property="end" column="end"/>
+	</resultMap>
+	
+	<select id="getLocusInfo" parameterType="java.util.Map" resultMap="LocusVoMap">
+		SELECT
+			chrom, txStart, txEnd, strand
+		FROM (
+			SELECT 
+				chrom, txStart, txEnd, strand
+			FROM (
+				SELECT
+					chrom
+					, txStart
+					, txEnd
+					, strand
+				FROM HiCaptureSeq.GENE_Refseq_hg38
+				WHERE name=#{name}
+				
+				UNION ALL
+	
+				SELECT
+					chrom
+					, txStart
+					, txEnd
+					, strand
+				FROM HiCaptureSeq.GENE_Refseq_hg38
+				WHERE name2=#{name}
+			) a
+			GROUP BY chrom, txStart, txEnd
+			
+			UNION ALL
+			
+ 			SELECT
+				chrom, chromStart AS txStart, chromEnd AS txEnd, '' AS strand
+			FROM HiCaptureSeq.AutocompleteTable
+			WHERE MATCH(name)
+			AGAINST( #{name} )
+			AND substring( #{name}, 1, 2 )="rs"
+		) a
+		GROUP BY chrom, txStart, txEnd
+		ORDER BY chrom, txStart
+	</select>
+	
+	<select id="getInteractions4Convolution" parameterType="java.util.Map" resultMap="InteractionVoMap">
+		SELECT
+			chr, bin1, bin2, count, foldChange
+		FROM (
+			SELECT 
+				chr , bin1 , bin2
+			, all_capture_res AS count
+			, dist_foldchange AS foldChange
+			FROM HiCaptureSeq.`${tableName}` a, ( 
+			<foreach item="item" index="index" collection="list" separator="UNION ALL">
+				SELECT ${item} AS bin
+	  			</foreach> 
+			) b WHERE a.chr=#{chrom}
+			AND a.bin1=b.bin
+	
+			UNION ALL
+	
+			SELECT 
+				chr , bin2 AS bin1, bin1 AS bin2
+			, all_capture_res AS count
+			, dist_foldchange AS foldChange
+			FROM HiCaptureSeq.`${tableName}` a, ( 
+			<foreach item="item" index="index" collection="list" separator="UNION ALL">
+				SELECT ${item} AS bin
+	  			</foreach> 
+			) b WHERE a.chr=#{chrom} 
+			AND a.bin2=b.bin 
+			AND a.bin1 != a.bin2
+		) a
+		WHERE bin2 BETWEEN bin1 - ${boundary} AND bin1 + ${boundary}
+		ORDER BY bin1, bin2
+	</select>
+	
+	<select id="getInteractions" parameterType="java.util.Map" resultMap="InteractionVoMap">
+ 	SELECT
+			chr
+			, bin1
+			, bin2
+			, SUM(count) / POW(${windowSize} / 5000, 2) count
+			, SUM(foldChange) / POW(${windowSize} / 5000, 2) foldChange
+		FROM (
+			SELECT
+				chr, bin1, count
+				, all_capture_res
+				, (diff DIV ${windowSize}) * ${windowSize} + #{min} as bin2
+				, foldChange
+			FROM (
+				SELECT 
+					chr , ${pos} AS bin1 , bin2
+					, (bin2 - ${min}) diff
+				, RawCount AS count 
+				, all_capture_res
+				, dist_foldchange AS foldChange
+				FROM HiCaptureSeq.`${tableName}` a, ( 
+				<foreach item="item" index="index" collection="list" separator="UNION ALL">
+					SELECT ${item} AS bin
+    			</foreach> 
+				) b WHERE a.chr=#{chrom}
+				AND a.bin1=b.bin
+
+				UNION ALL
+
+				SELECT 
+					chr , ${pos} AS bin1, bin1 AS bin2
+					, (bin1 - ${min}) diff
+				, RawCount AS count
+				, all_capture_res
+				, dist_foldchange AS foldChange
+				FROM HiCaptureSeq.`${tableName}` a, ( 
+				<foreach item="item" index="index" collection="list" separator="UNION ALL">
+					SELECT ${item} AS bin
+    			</foreach> 
+				) b WHERE a.chr=#{chrom} 
+				AND a.bin2=b.bin 
+				AND a.bin1 != a.bin2
+			) a
+		) a
+		WHERE bin2 BETWEEN bin1 - ${boundary} AND bin1 + ${boundary}
+		GROUP BY chr, bin1, bin2
+		ORDER BY bin2
+	</select>
+	
+	<select id="getGencode" parameterType="java.util.Map" resultMap="GeneVoMap">
+		SELECT
+			@rownum:=@rownum+1 AS num
+			, a.*
+		FROM (
+			SELECT
+				name2 AS name
+				, length(name2) AS nameLength
+				, seqname AS chrom
+				, start AS txStart
+				, end AS txEnd
+				, 'Gencode' AS tableNM
+				, '' AS locus
+				, strand
+			FROM HiCaptureSeq.GENE_Gencode_V34 a, (SELECT @rownum:=0) b
+			WHERE (start <![CDATA[>=]]> ${startPt} OR end <![CDATA[>=]]> ${startPt})
+			AND (start <![CDATA[<=]]> ${endPt} OR end <![CDATA[<=]]> ${endPt})
+			AND seqname=#{chrom}
+			GROUP BY name2, start, end
+		) a, (SELECT @rownum:=0) b
+		WHERE (@rownum:=0)=0
+		ORDER BY txStart, txEnd
+	</select>
+	
+	<select id="getGene" parameterType="java.util.Map" resultMap="GeneVoMap">
+		SELECT
+			@rownum:=@rownum+1 AS num
+			, a.*
+		FROM (
+			SELECT
+				name2 AS name
+				, length(name2) AS nameLength
+				, chrom
+				, txStart
+				, txEnd
+				, 'Refseq' AS tableNM
+				, name AS locus
+				, strand
+			FROM HiCaptureSeq.GENE_Refseq_hg38 a, (SELECT @rownum:=0) b
+			WHERE (txEnd - txStart) + (${endPt} - ${startPt}) <![CDATA[>]]> (GREATEST(txEnd, ${endPt}) - LEAST(txStart, ${startPt}))
+<!-- 			(txStart <![CDATA[>=]]> ${startPt} OR txEnd <![CDATA[>=]]> ${startPt})
+			AND (txStart <![CDATA[<=]]> ${endPt} OR txEnd <![CDATA[<=]]> ${endPt}) -->
+			AND chrom=#{chrom}
+			GROUP BY name2, txStart, txEnd
+		) a, (SELECT @rownum:=0) b
+		WHERE (@rownum:=0)=0
+		ORDER BY txStart, txEnd
+	</select>
+	
+	<select id="getGenePromoter" parameterType="java.util.Map" resultType="java.lang.String">
+<!-- 		SELECT
+			distinct name2
+		FROM HiCaptureSeq.GENE_Refseq_hg38_promoter
+		WHERE txStart <![CDATA[>=]]> ${startPt}
+		AND txEnd <![CDATA[<=]]> ${endPt}
+		AND chrom=#{chrom}
+		group by name2, txStart, txEnd -->
+		
+			SELECT
+				DISTINCT name2
+			FROM HiCaptureSeq.GENE_Refseq_hg38_promoter
+			WHERE chrom=#{chrom}
+			AND (txEnd - txStart) + (${endPt} - ${startPt}) <![CDATA[>]]> (GREATEST(txEnd, ${endPt}) - LEAST(txStart, ${startPt}))
+			group by name2, txStart, txEnd
+	</select>
+	
+	<select id="getGenePromoterHG19" parameterType="java.util.Map" resultType="java.lang.String">
+<!-- 			SELECT
+				distinct name2
+			FROM HiCaptureSeq.GENE_Refseq_hg19_promoter
+	 		WHERE txStart <![CDATA[>=]]> ${startPt}
+			AND txEnd <![CDATA[<=]]> ${endPt}		
+			AND chrom=#{chrom}
+			group by name2, txStart, txEnd -->
+
+			SELECT
+				DISTINCT name2
+			FROM HiCaptureSeq.GENE_Refseq_hg19_promoter
+			WHERE chrom=#{chrom}
+			AND (txEnd - txStart) + (${endPt} - ${startPt}) <![CDATA[>]]> (GREATEST(txEnd, ${endPt}) - LEAST(txStart, ${startPt}))
+			group by name2, txStart, txEnd
+	</select>
+	
+	<select id="getGeneName" parameterType="java.lang.String" resultMap="GeneVoMap">
+		SELECT
+			@rownum:=@rownum+1 AS num
+			, a.*
+		FROM (
+			SELECT
+				name2 as name
+				, length(name2) as nameLength
+				, chrom
+				, txStart
+				, txEnd
+				, 'Refseq' as tableNM
+				, name as locus
+				, strand
+			FROM HiCaptureSeq.GENE_Refseq_hg38 a, (SELECT @rownum:=0) b
+			WHERE name2=#{geneName}
+		) a, (SELECT @rownum:=0) b
+		WHERE (@rownum:=0)=0
+		order by txStart, txEnd
+	</select>
+	
+	<select id="getGeneNameHG19" parameterType="java.lang.String" resultMap="GeneVoMap">
+		SELECT
+			@rownum:=@rownum+1 AS num
+			, a.*
+		FROM (
+			SELECT
+				name2 as name
+				, length(name2) as nameLength
+				, chrom
+				, txStart
+				, txEnd
+				, 'Refseq' as tableNM
+				, name as locus
+				, strand
+			FROM HiCaptureSeq.GENE_Refseq_hg19 a, (SELECT @rownum:=0) b
+			WHERE name2=#{geneName}
+		) a, (SELECT @rownum:=0) b
+		WHERE (@rownum:=0)=0
+		order by txStart, txEnd
+	</select>
+	
+	<!-- 최종 HeatMap data  -->
+	<select id="getHeatMapData" parameterType="java.util.Map" resultMap="HeatMapVoMap">
+		SELECT 
+			bin,
+			interactionPair,
+			round(sum(count)/ POW(${heatmapWindowSize} / 5000, 2),2) as count
+		FROM(
+		SELECT 
+			floor((bin1-${startPt})/${heatmapWindowSize}) AS bin,
+			floor((bin2-${startPt})/${heatmapWindowSize}) AS interactionPair,
+			<if test='type eq "pairwise".toString()'>rescaled_intensity AS count</if>
+			<if test='type == null'>all_capture_res AS count</if>
+		FROM HiCaptureSeq.`${tableName}`
+		WHERE chr=#{chrom}
+		AND bin1 BETWEEN ${startPt} AND ${endPt}
+		AND bin2 BETWEEN ${startPt} AND ${endPt}
+		)a group by bin, interactionPair
+	</select>
+	
+	<select id="getHeatMapRawData" parameterType="java.util.Map" resultMap="HeatMapVoMap">
+	SELECT
+		 a.bin1 AS bin
+		, a.bin2 AS interactionPair
+		, b.length AS binLength
+		, c.length AS interactionPairLength
+		, a.all_capture_res AS count
+	FROM HiCaptureSeq.`${tableName}` a, (
+		SELECT
+			@rownum1:=@rownum1+1 id
+			, a.binStart
+			, (a.binEnd-a.binStart+1) AS length
+		FROM HiCaptureSeq.`${binTableName}` a, (SELECT @rownum1:=-1) b
+		WHERE chrom=#{chrom} 
+		AND binStart BETWEEN ${startPt} AND ${endPt}
+	) b, (
+		SELECT
+			@rownum2:=@rownum2+1 id
+			, a.binStart
+			, (a.binEnd-a.binStart+1) AS length
+		FROM HiCaptureSeq.`${binTableName}` a, (SELECT @rownum2:=-1) b
+		WHERE chrom=#{chrom} 
+		AND binStart BETWEEN ${startPt} AND ${endPt}
+	) c
+	WHERE a.chr=#{chrom}
+<!-- 	AND a.bin1 BETWEEN ${startPt} AND ${endPt}
+	AND a.bin2 BETWEEN ${startPt} AND ${endPt}  -->
+	AND a.bin1=b.binStart
+	AND a.bin2=c.binStart
+	ORDER BY bin1, bin2
+	</select> 
+	
+	
+	<select id="getHeatMapDataLast" parameterType="java.util.Map" resultMap="HeatMapVoMap">
+		SELECT 
+			chr
+			, FLOOR( (bin1 - ${startPt})/${heatmapWindowSize} ) AS bin
+			, FLOOR( (bin2 - ${startPt})/${heatmapWindowSize} ) AS interactionPair
+			, all_capture_res AS count
+		FROM HiCaptureSeq.`${tableName}`
+		WHERE chr=#{chrom}
+		AND bin1 BETWEEN ${startPt} AND ${endPt}
+		AND bin2 BETWEEN ${startPt} AND ${endPt}
+	</select> 
+	
+	
+	<select id="getAllToAllInteractionPairs" parameterType="java.util.Map" resultMap="InteractionVoMap">
+	SELECT
+		chr
+		, bin1
+		, bin2
+		, count
+		, foldChange
+		, bin1_idx
+		, bin2_idx
+	FROM (
+		SELECT 
+			chr
+			, bin1
+			, bin2
+			, all_capture_res AS count
+			, dist_foldchange AS foldChange
+			, FLOOR( (bin1 - ${startPt})/5000 ) AS bin1_idx
+			, FLOOR( (bin2 - ${startPt})/5000 ) AS bin2_idx 
+		<!-- FROM ${tableName} a use index(fst_idx), ( -->
+		FROM HiCaptureSeq.`${tableName}` a, (
+			SELECT @rownum1:=@rownum1+5000 AS bin FROM Data_endoC a, (SELECT @rownum1:=${startPt}-5000) b LIMIT ${diff}
+		) b
+		WHERE a.chr=#{chrom} AND a.bin1=b.bin
+
+		UNION ALL
+
+		SELECT 
+			chr
+			, bin2 AS bin1
+			, bin1 AS bin2
+			, all_capture_res AS count
+			, dist_foldchange AS foldChange
+			, FLOOR( (bin2 - ${startPt})/5000 ) AS bin1_idx
+			, FLOOR( (bin1 - ${startPt})/5000 ) AS bin2_idx 
+		FROM HiCaptureSeq.`${tableName}` a, (
+			SELECT @rownum:=@rownum+5000 AS bin FROM Data_endoC a, (SELECT @rownum:=${startPt}-5000) b LIMIT ${diff}
+		) b
+		WHERE a.chr=#{chrom} AND a.bin2=b.bin AND a.bin1 != a.bin2
+	) a
+	WHERE bin1 BETWEEN ${startPt} AND ${endPt}
+	AND bin2 BETWEEN ${startPt} AND ${endPt}
+
+	</select>
+	
+	<select id="getAllToAllInteractionPairsGraph" parameterType="java.util.Map" resultMap="InteractionVoMap">
+
+			SELECT 
+				chr , bin1 , bin2 , all_capture_res AS count , dist_foldchange AS foldChange , FLOOR( (bin1 - ${baitStart})/5000 ) AS bin1_idx , FLOOR( (bin2 - ${startPt})/5000 ) AS bin2_idx 
+			FROM HiCaptureSeq.${tableName} a, (
+				SELECT @rownum1:=@rownum1+5000 AS bin FROM HiCaptureSeq.Data_endoC a, (SELECT @rownum1:=${baitStart}-5000) b LIMIT ${diffBait}
+			) b, 
+			(
+				SELECT @rownum:=@rownum+5000 AS bin FROM HiCaptureSeq.Data_endoC a, (SELECT @rownum:=${startPt}-5000) b LIMIT ${diff}
+			) c
+			WHERE a.chr=#{chrom} AND a.bin1=b.bin and a.bin2=c.bin
+			
+			UNION ALL
+			
+			SELECT 
+				chr , bin2 AS bin1, bin1 AS bin2, all_capture_res AS count , dist_foldchange AS foldChange , FLOOR( (bin2 - ${baitStart})/5000 ) AS bin1_idx , FLOOR( (bin1 - ${startPt})/5000 ) AS bin2_idx 
+			FROM HiCaptureSeq.${tableName} a, (
+				SELECT @rownum2:=@rownum2+5000 AS bin FROM HiCaptureSeq.Data_endoC a, (SELECT @rownum2:=${baitStart}-5000) b LIMIT ${diffBait}
+			) b, 
+			(
+				SELECT @rownum3:=@rownum3+5000 AS bin FROM HiCaptureSeq.Data_endoC a, (SELECT @rownum3:=${startPt}-5000) b LIMIT ${diff}
+			) c
+			WHERE a.chr=#{chrom} AND a.bin1=c.bin and a.bin2=b.bin
+	</select>
+
+	<select id="getSampleList" resultMap="SampleVoMap">
+		SELECT 
+			@rownum:=@rownum+1 as num
+			, id, celline_name AS celline_name, table_name, valid_yn 
+		FROM HiCaptureSeq.CellineInfo a, (SELECT (@rownum:=0)=0) b
+		WHERE valid_yn='Y'
+		ORDER BY id
+	</select>
+	
+	<select id="getOnlyOneSample" resultMap="SampleVoMap">
+		SELECT 
+			id, celline_name, table_name, valid_yn, binning_type, binning_table_name, sample_name, super_enhancer, epigenomic_annotation, tad, epigenome_table, super_enhancer_table
+		FROM HiCaptureSeq.CellineInfo
+		WHERE valid_yn='Y'
+		<if test="sampleId != null">
+			AND id = #{sampleId}
+		</if>
+	</select>
+	
+	<select id="getTableName" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT table_name FROM HiCaptureSeq.CellineInfo WHERE id=${id}
+	</select>
+	
+	<select id="getAutoCompleteGeneSymbol" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT name2 FROM 
+		(
+			SELECT name2 FROM HiCaptureSeq.GENE_Refseq_hg38
+			WHERE name2 LIKE CONCAT('%', #{symbol}, '%')
+			GROUP BY name2
+			
+			UNION ALL
+			
+			SELECT name FROM HiCaptureSeq.AutocompleteTable
+			WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+<!-- 	
+			<if test="symbol != null and 6 >= length">
+			SELECT name AS name2 FROM (
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable1
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable2
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable3
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable4
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable5
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable6
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable7
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable8
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable9
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable10
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable11
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable12
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable13
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable14
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable15
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable16
+				WHERE MATCH(name) AGAINST('${symbol}' IN BOOLEAN MODE)
+			) a
+			</if>
+	
+			<if test="symbol != null and length > 6">
+			SELECT name AS name2 FROM (
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable1
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable2
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable3
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable4
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable5
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable6
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable7
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable8
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable9
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable10
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable11
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable12
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable13
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable14
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable15
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+				UNION ALL
+				SELECT name FROM HiCaptureSeq.AutocompleteSnpTable16
+				WHERE MATCH(name) AGAINST('${symbol}*' IN BOOLEAN MODE)
+			) a
+			ORDER BY LENGTH(name2), name2
+			LIMIT 50
+			</if> -->
+		)A GROUP BY name2
+	</select>
+	<!-- 최종 interaction graph 데이터 -->
+	<select id="getInteractionLast" parameterType="java.util.Map" resultMap="InteractionVoMap">
+		SELECT 
+			chr, bin2 AS bin1, bin1 AS bin2, all_capture_res AS count, dist_foldchange AS foldChange
+			, b.binEnd - b.binStart + 1 AS bin2Len 
+		FROM HiCaptureSeq.`${tableName}` a, HiCaptureSeq.`${binTableName}` b
+		WHERE a.chr=#{chr} 
+		AND a.bin2=${pos}
+		AND a.bin1 BETWEEN ${startPt} AND ${endPt}
+		AND a.chr=b.chrom
+		AND a.bin1 = b.binStart
+		
+		UNION
+				
+		SELECT 
+			chr, bin1, bin2, all_capture_res AS count, dist_foldchange AS foldChange
+			, b.binEnd - b.binStart + 1 AS bin2Len 
+		FROM HiCaptureSeq.`${tableName}` a, HiCaptureSeq.`${binTableName}` b
+		WHERE a.chr=#{chr}
+		AND a.bin1=${pos}
+		AND a.bin2 BETWEEN ${startPt} AND ${endPt}
+		AND a.chr=b.chrom
+		AND a.bin2 = b.binStart
+		
+		ORDER BY bin2 ASC
+	</select>
+	<select id="getTadInfo" parameterType="java.util.Map" resultMap="TadVoMap">
+		SELECT 
+			chr, (`start`-${start})/${heatmapWindowSize} as startIdx, (`end`-${start})/${heatmapWindowSize} as endIdx, `start`, `end`
+		FROM HiCaptureSeq.`${tableName}`
+		WHERE chr=#{chr} 
+		AND (start <![CDATA[>=]]> ${start} OR end <![CDATA[>=]]> ${start}) AND (start <![CDATA[<=]]> ${end} OR end <![CDATA[<=]]> ${end})
+	</select>
+	<select id="getEnhancerInfo" parameterType="java.util.Map" resultType="org.kobic.hicv2.hic.vo.SuperEnhancerVo">
+		SELECT 
+			chr, `start`, `end`, id 
+		FROM HiCaptureSeq.`${tableName}`
+		WHERE chr=#{chr}
+		AND (start <![CDATA[>=]]> ${start} OR end <![CDATA[>=]]> ${start}) AND (start <![CDATA[<=]]> ${end} OR end <![CDATA[<=]]> ${end})
+	</select>
+	
+	<select id="getEpigenomics" parameterType="java.util.Map" resultType="org.kobic.hicv2.hic.vo.EpigenomicsVo">
+		SELECT
+			a.*, ifnull(GROUP_CONCAT(b.name2 SEPARATOR ';'),'-') AS geneName
+		FROM (
+		
+			SELECT 
+				celline_name as sample,
+				a.chr,
+				a.bin2 as origin_bin,
+				concat(a.chr,':',a.bin2,'-',a.bin2+5000) as bin,
+				ABS(a.bin2-${pos}) as distance,
+				ROUND(a.count,2) as intensity,
+				ROUND(a.foldChange,2) as significance,
+				<choose>
+					<when test="existChk eq 'Y'.toString()">
+						c.enhancer, 
+						CASE WHEN h2afz IS NULL THEN 'NA'
+						ELSE ROUND(h2afz,2)
+						END									as h2afz, 
+						CASE WHEN h3k27ac IS NULL THEN 'NA'
+						ELSE ROUND(h3k27ac,2)
+						END									as h3k27ac,
+						CASE WHEN h3k27me3 IS NULL THEN 'NA' 
+						ELSE ROUND(h3k27me3,2)
+						END 								as h3k27me3, 
+						CASE WHEN h3k36me3 IS NULL THEN 'NA'
+						ELSE ROUND(h3k36me3,2)
+						END 								as h3k36me3, 
+						CASE WHEN h3k4me1 IS NULL THEN 'NA'
+						ELSE ROUND(h3k4me1,2)
+						END 								as h3k4me1, 
+						CASE WHEN h3k4me3 IS NULL THEN 'NA'
+						ELSE ROUND(h3k4me3,2)
+						END 								as h3k4me3 , 
+						CASE WHEN h3k9ac IS NULL THEN 'NA'
+						ELSE ROUND(h3k9ac,2)
+						END 								as h3k9ac, 
+					</when>
+					<otherwise>
+						'NA' as enhancer,
+						'NA' as h2afz, 
+						'NA' as h3k27ac, 
+						'NA' as h3k27me3, 
+						'NA' as h3k36me3, 
+						'NA' as h3k4me1, 
+						'NA' as h3k4me3 , 
+						'NA' as h3k9ac, 
+					</otherwise>
+				</choose>
+				IFNULL(d.snps,'NA') as snps 
+			FROM(
+					SELECT chr, bin1, bin2, all_capture_res AS count, dist_foldchange AS foldChange FROM HiCaptureSeq.`${tableName}`
+					WHERE chr=#{chr} 
+					AND bin1=${pos}
+					AND bin2 BETWEEN ${startPt} AND ${endPt}
+		
+					UNION ALL
+		
+					SELECT chr, bin2 AS bin1, bin1 AS bin2, all_capture_res AS count, dist_foldchange AS foldChange FROM HiCaptureSeq.`${tableName}`
+					WHERE chr=#{chr} 
+					AND bin2=${pos}
+					AND bin1 BETWEEN ${startPt} AND ${endPt}
+			)a
+			INNER JOIN HiCaptureSeq.CellineInfo b
+			ON b.id=#{sampleId}
+			
+			<if test="existChk eq 'Y'.toString()">
+			INNER JOIN HiCaptureSeq.`${epiTableName}` c
+			ON a.chr=c.chr
+			AND a.bin2=c.bin
+			</if>
+			
+			LEFT OUTER JOIN HiCaptureSeq.GWAS_SNP d 
+			ON a.chr=d.chr 
+			AND a.bin2=d.bin
+		)a
+		LEFT OUTER JOIN HiCaptureSeq.GENE_Refseq_hg38_promoter b
+		ON txStart <![CDATA[<=]]> a.origin_bin
+		AND txEnd <![CDATA[>=]]> a.origin_bin+5000
+		AND chrom=a.chr
+
+		GROUP BY sample, chr, origin_bin  
+		ORDER BY snps desc, geneName desc, enhancer	
+	</select>
+	<select id="getPairwiseEnhancerInfo" parameterType="java.util.Map" resultType="org.kobic.hicv2.hic.vo.SuperEnhancerVo">
+		SELECT * FROM (
+			<if test="tableName1 != null">
+				SELECT 
+					chr, `start`, `end`, id 
+				FROM HiCaptureSeq.`${tableName1}`
+				WHERE chr=#{chr}
+				AND (start <![CDATA[>=]]> ${start} OR end <![CDATA[>=]]> ${start}) AND (start <![CDATA[<=]]> ${end} OR end <![CDATA[<=]]> ${end})
+			</if>
+			<if test="tableName1 !=  null and tableName2 !=  null">
+			UNION ALL
+			</if>
+			<if test="tableName2 !=  null">
+			SELECT 
+				chr, `start`, `end`, id 
+			FROM HiCaptureSeq.`${tableName2}`
+			WHERE chr=#{chr}
+			AND (start <![CDATA[>=]]> ${start} OR end <![CDATA[>=]]> ${start}) AND (start <![CDATA[<=]]> ${end} OR end <![CDATA[<=]]> ${end})
+			</if>
+		)A
+		ORDER BY `start` asc
+	</select>
+	<select id="getExistTable" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT super_enhancer FROM HiCaptureSeq.CellineInfo WHERE table_name=#{tableName} LIMIT 1;
+	</select>
+	<select id="getBinningType" parameterType="java.lang.String" resultType="java.lang.Integer">
+		SELECT binning_type FROM HiCaptureSeq.CellineInfo WHERE table_name=#{tableName} LIMIT 1;
+	</select>
+	<select id="getBinningTableName" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT binning_table_name FROM HiCaptureSeq.CellineInfo WHERE table_name=#{tableName} LIMIT 1;
+	</select>
+	<select id="getExistEpigenome" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT epigenomic_annotation FROM HiCaptureSeq.CellineInfo WHERE table_name=#{tableName} LIMIT 1;
+	</select>
+	
+	<select id="getBinningPosition" parameterType="java.lang.String" resultType="java.lang.Integer">
+		SELECT binStart FROM HiCaptureSeq.${tableName} WHERE chrom=#{chrom} AND ${pos} BETWEEN binStart AND binEnd;
+	</select>
+	<select id="getExistTad" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT IFNULL(tad,'N') FROM HiCaptureSeq.CellineInfo WHERE sample_name=#{sample_name}
+	</select>
+	
+<!-- 	<select id="getCharacteristicTypeInit" resultType="java.util.Map">
+		SELECT 
+			type AS type
+			, 'false' AS expand 
+		FROM (
+			SELECT type, COUNT(*) FROM HiCaptureSeq.CellineGroupInfo
+			GROUP BY type
+			ORDER BY COUNT(*) DESC
+			LIMIT 4
+		)a
+		UNION ALL
+		SELECT 
+			'Etc' AS type
+			, 'true' AS expand 
+		SELECT 
+			type
+			,`name`
+			,COUNT(*) AS cnt
+		FROM HiCaptureSeq.CellineGroupInfo
+		GROUP BY type, `name`
+	</select> -->
+	<select id="getCharacteristicNameInit" resultType="java.util.Map">
+		<!-- SELECT 
+			IFNULL( b.type, 'Etc') AS type
+			, a.`name`
+			, SUM(a.cnt) AS cnt
+			, 'true' AS expand 
+		FROM (
+			SELECT 
+				type
+				,`name`
+				, COUNT(*) AS cnt
+			FROM HiCaptureSeq.CellineGroupInfo
+			GROUP BY type, `name`
+		)a LEFT OUTER JOIN (
+			SELECT type FROM HiCaptureSeq.CellineGroupInfo
+			GROUP BY type
+			ORDER BY COUNT(*) DESC
+			LIMIT 4
+		)b
+		ON a.type=b.type
+		GROUP BY type, `name` -->
+		SELECT 
+			a.${colName}
+			,b.id
+			<choose>
+				<when test="type == null and name == null and property == null">
+    				, COUNT(DISTINCT a.sample_id) AS cnt
+    			</when>
+    			<when test="type != null and name == null and property == null">
+    				, COUNT(DISTINCT a.sample_id) AS cnt
+    			</when>
+    			<when test="type != null and name != null and property == null">
+    				, COUNT(DISTINCT a.sample_id) AS cnt
+    			</when>
+    		</choose>
+		FROM HiCaptureSeq.CellineGroupInfo a, HiCaptureSeq.CellineInfo b
+		WHERE a.`sample_id`=b.`sample_name`
+		AND b.valid_yn = 'Y'
+		<if test="type != null">
+			AND a.type = #{type}
+		</if>
+		<if test="name != null">
+			AND a.name = #{name}
+		</if>
+		<if test="property != null">
+			AND a.property = #{property}
+		</if>
+		GROUP BY a.${colName}
+		ORDER BY b.id
+	</select>
+	
+<!-- 	<select id="getSampleListPcHiCTest" resultMap="SampleVoMap">
+		SELECT 
+			@rownum:=@rownum+1 as num
+			, id, celline_name AS celline_name, table_name, valid_yn 
+		FROM HiCaptureSeq.CellineInfo a, (SELECT (@rownum:=0)=0) b
+		WHERE valid_yn='N'
+		ORDER BY id
+	</select>
+	
+	<select id="getAutocompleteHicSamples" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT 
+			celline_name
+		FROM HiCaptureSeq.CellineInfo
+		WHERE celline_name LIKE CONCAT("%",#{keyword},"%")
+		AND valid_yn='Y'
+	</select>
+	
+	<select id="getCharacteristicProperty" parameterType="java.lang.String" resultType="java.util.Map">
+		SELECT 
+			type
+			, `name`
+			, property
+			, COUNT(*) AS cnt
+		FROM HiCaptureSeq.CellineGroupInfo
+		WHERE `name` = #{name}
+		GROUP BY type, property
+	</select>
+	
+	<select id="getCharacteristicSampleList" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT 
+			sample_name 
+		FROM HiCaptureSeq.CellineGroupInfo
+		WHERE type = #{type}
+		AND `name` = #{name}
+		<if test="property != ''">
+			AND property = #{property}
+		</if>
+	</select> -->
+</mapper>

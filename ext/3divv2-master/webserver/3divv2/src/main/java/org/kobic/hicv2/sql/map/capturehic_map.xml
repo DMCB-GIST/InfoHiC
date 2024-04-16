@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.kobic.hicv2.capturehic.mapper.CaptureHiCMapper">
+
+	<resultMap id="GeneVoMap" type="org.kobic.hicv2.capturehic.vo.GeneStructureVo">
+		<result property="num" column="num" />
+		<result property="name" column="name" />
+		<result property="nameLength" column="nameLength" />
+		<result property="chrom" column="chrom" />
+		<result property="txStart" column="txStart" />
+		<result property="txEnd" column="txEnd" />
+		<result property="tableNM" column="tableNM" />
+		<result property="locus" column="locus" />
+		<result property="strand" column="strand" />
+		
+		<result property="cdsStart" column="cdsStart" />
+		<result property="cdsEnd" column="cdsEnd" />
+		<result property="exonCount" column="exonCount" />
+		<result property="exonStarts" column="exonStarts" />
+		<result property="exonEndss" column="exonEndss" />
+	</resultMap>
+	
+	<resultMap id="LocusVoMap" type="org.kobic.hicv2.hic.vo.LocusVo">
+		<result property="chrom" column="chrom" />
+		<result property="txStart" column="txStart" />
+		<result property="txEnd" column="txEnd" />
+		<result property="strand" column="strand" />
+	</resultMap>
+	
+
+	<select id="getCapturedHiCData4Smoothing" parameterType="java.util.Map" resultType="org.kobic.hicv2.capturehic.vo.CapturedHiCVo">
+		SELECT
+			b.sampleName					AS type
+			, a.promoter_yn					AS promoter_yn
+			, #{chrom}						AS chrom
+			, ${promoter_bin_s}				AS bin1_s
+			, ${promoter_bin_e}				AS bin1_e
+			, b.bin_s						AS bin2_s
+			, b.bin_e						AS bin2_e
+			, IFNULL(a.freq, 0)				AS freq
+			, IFNULL(a.dist, 0)				AS dist
+			, IFNULL(a.dist_res, 0)			AS dist_res
+			, IFNULL(a.all_capture_res, 0)	AS all_capture_res
+			, IFNULL(a.pvalue, 0)			AS pvalue
+		FROM (
+			SELECT 
+				b.sample AS type , CASE WHEN a.type LIKE '%.pp' THEN 1 ELSE 2 END AS promoter_yn , chrom 
+				, bin1_s , bin1_e , bin2_s , bin2_e , freq , dist , dist_res , all_capture_res , log_10_result AS pvalue 
+			FROM CaptureHiCDB.CaptureHiC a, (
+				SELECT
+					sample
+					, type
+				FROM CaptureHiCDB.I1_SampleInfo
+				WHERE sample IN
+				<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+					#{item}	
+				</foreach>			
+			) b
+			WHERE a.type=b.type 
+			AND chrom=#{chrom}
+			AND bin1_s=${bait}
+			AND bin2_s 	<![CDATA[>=]]> ${bait} - ${boundary} AND bin2_e <![CDATA[<=]]> ${bait} + ${boundary}
+		) a RIGHT OUTER JOIN (
+			SELECT * from (
+				SELECT * FROM CaptureHiCDB.I2_BinInfo b
+				WHERE b.chrom=#{chrom}
+				AND b.bin_s <![CDATA[>=]]> ${bait} - ${boundary} and b.bin_e <![CDATA[<=]]> ${bait} + ${boundary}
+			) a, (
+				
+				SELECT
+					CASE
+					<foreach item="item" index="index" collection="list">
+						WHEN id=${index+1} THEN no_${index}
+					</foreach>
+					END sampleName
+				FROM (
+					SELECT
+					<foreach item="item" index="index" collection="list" separator=",">
+						#{item}	AS no_${index}
+					</foreach>
+				) a, (
+					SELECT
+						id
+					FROM CaptureHiCDB.CaptureHiC
+					LIMIT ${list.size()}
+				) b
+				
+			) b
+			ORDER BY b.sampleName, a.chrom, a.bin_s
+		) b ON a.bin2_s=b.bin_s
+		AND a.type=b.sampleName
+		ORDER BY b.sampleName, b.bin_s
+	</select>
+
+	<select id="getCapturedHiCData" parameterType="java.util.Map" resultType="org.kobic.hicv2.capturehic.vo.CapturedHiCVo">
+		SELECT
+			b.sample AS type
+			, CASE WHEN a.type LIKE '%.pp' THEN 1
+			ELSE 2 END AS promoter_yn
+			, chrom
+			, bin1_s
+			, bin1_e
+			, bin2_s
+			, bin2_e
+			, freq
+			, dist
+			, dist_res
+			, all_capture_res
+			, log_10_result AS pvalue
+		FROM CaptureHiCDB.CaptureHiC a, (
+			SELECT
+				sample
+				, type
+			FROM CaptureHiCDB.I1_SampleInfo
+			WHERE sample IN
+			<foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+				#{item}	
+			</foreach>			
+		) b
+		WHERE a.type=b.type 
+		AND chrom=#{chrom}
+		AND bin1_s=${bait}
+		AND bin2_s 	<![CDATA[>=]]> ${bait} - ${boundary} AND bin2_e <![CDATA[<=]]> ${bait} + ${boundary}
+	</select>
+	
+	<select id="getBinStartPos" parameterType="java.util.Map" resultType="org.kobic.hicv2.capturehic.vo.BinFragmentVo">
+		SELECT
+			bin_s
+			, bin_e
+		FROM CaptureHiCDB.I2_BinInfo
+		WHERE chrom=#{chrom} and bin_s <![CDATA[<=]]> ${pos} AND bin_e <![CDATA[>=]]> ${pos}
+	</select>
+	
+		
+	<select id="getSampleList" resultType="org.kobic.hicv2.capturehic.vo.CapturedSampleVo">
+		SELECT
+			@rownum:=@rownum+1 AS id
+			, sample
+			, `desc`
+		FROM (
+			SELECT
+				DISTINCT sample
+				, IF(`desc` is null, sample, CONCAT(sample,' (',`desc`,')') ) as `desc`
+			FROM CaptureHiCDB.I1_SampleInfo
+			WHERE valid_yn='Y'
+		) a, (SELECT (@rownum:=0)=0) b
+	</select>
+
+	<select id="getGene" parameterType="java.util.Map" resultMap="GeneVoMap">
+		SELECT
+			name2 as name
+			, chrom
+			, txStart
+			, txEnd
+			, 'Refseq' as tableNM
+			, name as locus
+			, strand
+		    , cdsStart
+		    , cdsEnd
+		    , exonCount
+		    , exonStarts
+		    , exonEnds
+		FROM CaptureHiCDB.GENE_Refseq_hg19
+		WHERE chrom=#{chrom}
+		AND (
+			txStart <![CDATA[>=]]> ${startPt} OR txEnd <![CDATA[>=]]> ${startPt}
+		) 
+		AND (
+			txStart <![CDATA[<=]]> ${endPt} OR txEnd <![CDATA[<=]]> ${endPt}
+		)
+		GROUP BY name2, chrom, txStart, txEnd
+		ORDER BY txStart, txEnd
+	</select>
+	
+	<select id="getGencode" parameterType="java.util.Map" resultMap="GeneVoMap">
+		SELECT
+			name2 as name
+			, seqname AS chrom
+			, `start` AS txStart
+			, `end` AS txEnd
+			, 'Gencode' as tableNM
+			, strand
+		FROM CaptureHiCDB.I2_Gencode_V19
+		WHERE seqname=#{chrom}
+		AND (
+			`start` <![CDATA[>=]]> ${startPt} OR `end` <![CDATA[>=]]> ${startPt}
+		) 
+		AND (
+			`start` <![CDATA[<=]]> ${endPt} OR `end` <![CDATA[<=]]> ${endPt}
+		)
+		GROUP BY name2, seqname, `start`, `end`
+		ORDER BY `start`, `end`
+	</select>
+	
+	<select id="getCaptureHiCDownloadList" resultType="org.kobic.hicv2.capturehic.vo.CapturedSampleVo">
+		SELECT
+			sample
+			,type
+			,file_name
+			,file_size
+			,`desc`
+		FROM CaptureHiCDB.I1_SampleInfo
+		WHERE valid_yn='Y'
+	</select>
+	
+	<select id="getAutoCompleteGeneSymbolHg19" parameterType="java.util.Map" resultType="java.lang.String">
+		SELECT name2 FROM 
+		(
+			SELECT name2 FROM CaptureHiCDB.GENE_Refseq_hg19
+			WHERE name2 LIKE CONCAT('%', #{symbol}, '%')
+			GROUP BY name2
+		) a
+	</select>
+	
+	<select id="getLocusInfo" parameterType="java.util.Map" resultMap="LocusVoMap">
+		SELECT
+			chrom, txStart, txEnd, strand
+		FROM (
+			SELECT 
+				chrom, txStart, txEnd, strand
+			FROM (
+				SELECT
+					chrom
+					, txStart
+					, txEnd
+					, strand
+				FROM CaptureHiCDB.GENE_Refseq_hg19
+				WHERE name=#{name}
+				
+				UNION ALL
+	
+				SELECT
+					chrom
+					, txStart
+					, txEnd
+					, strand
+				FROM CaptureHiCDB.GENE_Refseq_hg19
+				WHERE name2=#{name}
+			) a
+			GROUP BY chrom, txStart, txEnd
+		) a
+		GROUP BY chrom, txStart, txEnd
+		ORDER BY chrom, txStart
+	</select>
+</mapper>

@@ -2,6 +2,7 @@ use Bio::DB::Fasta;
 use warnings;
 
 my $fa=$ARGV[0];
+`rm -rf $fa.index`;
 my $db = Bio::DB::Fasta->new($fa);
 my @db_chr = $db->get_all_primary_ids;
 my $chr_prefix=0;
@@ -9,7 +10,6 @@ if (substr($db_chr[0],0,3) eq "chr"){
         $chr_prefix=1;
 }
 
-#my $db = Bio::DB::Fasta->new("/NAS_Storage1/qlalf1457/ucsc.hg19.fasta");
 open(my $new_full_f1, '>', "hap1.fa");
 open(my $new_full_f2, '>', "hap2.fa");
 
