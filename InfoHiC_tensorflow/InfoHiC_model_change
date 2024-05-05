@@ -4,20 +4,19 @@ lib=$2
 res=$3
 res_string=`echo $res | awk '{res=$1/1000; print res"kb"}'`
 window=$4
-InfoGenomeR_dir=`readlink -f $5`
-HiC_dir=`readlink -f $6`
-SEED_FILE=$7
-MAX_EPOCH=$8
+HiC_dir=`readlink -f $5`
+SEED_FILE=$6
+MAX_EPOCH=$7
+REF=$8
+SEED_WEIGHTS_TRAINED=$9
 NUM_CLASSES=`echo $window | awk -v res=$res '{v=$1-res; print v/res}'`
 
 # GLOBAL RUN OPTIONS ==========================================================
 SCRIPT_PATH=$lib
 TRAIN_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_train
-TRAIN_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_train
 VALID_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_valid
-VALID_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_valid
-train_dir=./training_run_data_${res_string}_ascn_ACGT_rc_shift/
-log=InfoHiC_${res_string}_ascn_dcnn_rc_shift.log
+train_dir=./
+log="model_change.log"
 # Select Test and Validation Chromosomes
 # Test chromosomes will be checked after each epoch
 # or the specified number of chromosomes trained on
@@ -57,28 +56,25 @@ dilation_residual_dense=True
 
 # Transfer learning settings
 seed_weights=True  # use seeding /transfer learning at all
-seed_scheme='1,1,1,1,1,0'  # specify which layers to seed (1: seed, 0: not seed)
+seed_scheme='1,1,1,1,1,1'  # specify which layers to seed (1: seed, 0: not seed)
 seed_file=$SEED_FILE
+seed_weights_trained=$SEED_WEIGHTS_TRAINED
 # Other
 shuffle=True
 store_dtype='uint16'  # how to store the sequence
-hap1=$InfoGenomeR_dir\/hap1.fa
-hap2=$InfoGenomeR_dir\/hap2.fa
-ascn_file=$InfoGenomeR_dir\/ascn_file
+whg_fasta=$REF
 # if multiple GPUs present select a single one to run training on
-# and not block the remaining
-GPU=$gpu
+# and not bloc the remaining
+GPU=1
 # Run =========================================================================
 
+max_epoch=1
 
-max_epoch=$MAX_EPOCH
-
-python ${SCRIPT_PATH}/InfoHiC_training.py \
+python ${SCRIPT_PATH}/model_change.py \
 	--log ${log} \
-        --train_data_file ${TRAIN_DATA_FILE} \
+	--train_data_file ${TRAIN_DATA_FILE} \
 	--valid_data_file ${VALID_DATA_FILE} \
-        --train_data_file_rc ${TRAIN_DATA_FILE_RC} \
-        --valid_data_file_rc ${VALID_DATA_FILE_RC} \
+	--max_epoch ${max_epoch} \
         --train_dir ${train_dir} \
         --report_every ${report_every} \
         --num_classes ${num_classes} \
@@ -99,13 +95,9 @@ python ${SCRIPT_PATH}/InfoHiC_training.py \
         --dilation_residual_dense=${dilation_residual_dense} \
         --epsilon ${epsilon} \
         --seed_weights=${seed_weights} \
+	--seed_weights_trained=${seed_weights_trained} \
         --seed_scheme ${seed_scheme} \
         --seed_file ${seed_file} \
         --store_dtype ${store_dtype} \
-        --hap1 ${hap1} \
-        --hap2 ${hap2} \
-        --ascn_file ${ascn_file} \
+	--whg_fasta ${whg_fasta}\
         --gpu ${GPU} \
-#	--model "./best_checkpoint-##" \
-#	--reload_model 'True'
-

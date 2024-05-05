@@ -11,6 +11,9 @@ import sys
 
 import numpy as np
 import tensorflow as tf
+if int(tf.__version__.split(sep=".")[0]) > 1:
+    import tensorflow.compat.v1 as tf
+    tf.disable_v2_behavior()
 import pysam
 
 import deepCregr

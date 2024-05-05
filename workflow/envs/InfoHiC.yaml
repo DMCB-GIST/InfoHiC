@@ -17,8 +17,10 @@ dependencies:
         - r-ggforce
         - python=3.8.0
         - pip:
-                - tensorflow-gpu==2.11.0
+                - tensorflow-gpu==2.8.0
                 - numpy==1.22.0
+                - six
+                - protobuf==3.20.0
                 - pysam==0.17.0
                 - scipy==1.5.0
                 - iced==0.5.10

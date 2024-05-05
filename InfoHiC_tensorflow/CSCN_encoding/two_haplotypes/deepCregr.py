@@ -13,6 +13,9 @@ from __future__ import print_function
 import math
 import re
 import tensorflow as tf
+if int(tf.__version__.split(sep=".")[0]) > 1:
+    import tensorflow.compat.v1 as tf
+    tf.disable_v2_behavior()
 import numpy as np
 
 
@@ -79,7 +82,10 @@ def preload_variable(name, data):
 def create_variable(name, shape):
     '''Create a convolution filter variable with the specified name and shape,
     and initialize it using Xavier initialition.'''
-    initializer = tf.contrib.layers.xavier_initializer_conv2d()
+    if int(tf.__version__.split(sep=".")[0]) > 1:
+        initializer = tf.compat.v1.keras.initializers.glorot_normal()
+    else:
+        initializer = tf.contrib.layers.xavier_initializer_conv2d()
     variable = tf.Variable(initializer(shape=shape), name=name)
     # variable = tf.Variable(tf.truncated_normal(shape), name=name)
     return variable
@@ -128,12 +134,6 @@ def dilated_layer(name,
                   dilation,
                   dilation_width,
                   dilation_units,
-                  seed_weights,
-                  seed_biases,
-                  seed_gate_weights,
-                  seed_gate_biases,
-                  seed_dense_weights,
-                  seed_dense_biases,
                   residual=False,
                   dense_residual=False,
                   to_batch_norm=False):
@@ -153,15 +153,15 @@ def dilated_layer(name,
         # get shapes
         channels = input_batch.get_shape().as_list()[2]
         # create variables
-        dilation_weights = preload_variable("dilation_weights", seed_weights)
-        dilation_biases = preload_variable("dilation_biases", seed_biases)
-        gate_weights = preload_variable("gate_weights", seed_gate_weights)
-        gate_biases = preload_variable("gate_biases", seed_gate_biases)
+        dilation_weights = create_variable('dilation_weights', [dilation_width, channels, dilation_units])
+        dilation_biases = create_bias_variable('dilation_biases', [dilation_units])
+        gate_weights = create_variable('gate_weights', [dilation_width, channels, dilation_units])
+        gate_biases = create_bias_variable('gate_biases', [dilation_units])
         # redisual and skip
         if residual == True:
             if dense_residual == True:
-                dense_weights = preload_variable("dense_weights", seed_dense_weights)
-                dense_biases = preload_variable("dense_biases", seed_dense_biases)
+                dense_weights = create_variable('dense_weights', [dilation_units, channels, dilation_units])
+                dense_biases = create_bias_variable('dense_biases', [dilation_units])
                 # skip_weights = create_variable('skip_weights', [1, dilation_units, skip_units])
                 # skip_biases = create_bias_variable('skip_biases', [skip_units])
 
@@ -275,13 +275,12 @@ def inference(seqs,
               dilation_residual_dense,
               dilation_batch_norm,
               num_classes,
-              batch_size,
+              ascn_class,
               keep_prob_inner,
               keep_prob_outer,
-              cn,
               seed_weights,
               seed_scheme,
-              seed_weights_list_trained
+              seed_weights_list
               ):
     """INFERENCE
     Args:
@@ -301,9 +300,9 @@ def inference(seqs,
         for i in range(conv_layers):
             j = i + 1
             k = i * 2
-            if seed_weights:
-                weights_load_string = 'c'+str(j)+'w'
-                biases_load_string = 'c'+str(j)+'b'
+            if seed_weights and seed_scheme[i] == 1:
+                weights_load_string = 'arr_' + str(k)
+                biases_load_string = 'arr_' + str(k+1)
                 print('Pre-seeding Layer: ' + str(j))
                 current_layer = convolutional_layer(
                     'conv_layer{}'.format(j),
@@ -313,8 +312,8 @@ def inference(seqs,
                     max_pool_scheme[i],
                     keep_prob_inner,
                     True,
-                    seed_weights_list_trained[weights_load_string],
-                    seed_weights_list_trained[biases_load_string],
+                    seed_weights_list[weights_load_string],
+                    seed_weights_list[biases_load_string],
                     to_batch_norm=False)
             else:
                 current_layer = convolutional_layer(
@@ -340,12 +339,6 @@ def inference(seqs,
             1,
             dilation_width,
             dilation_units,
-            seed_weights_list_trained['d1w'],
-            seed_weights_list_trained['d1b'],
-            seed_weights_list_trained['d1gw'],
-            seed_weights_list_trained['d1gb'],
-            seed_weights_list_trained['d1dw'],
-            seed_weights_list_trained['d1db'],
             residual = dilation_residual,
             dense_residual = dilation_residual_dense,
             to_batch_norm = dilation_batch_norm)
@@ -353,22 +346,12 @@ def inference(seqs,
         print(current_layer.get_shape().as_list())
         for i, dilation in enumerate(dilation_scheme):
             i = i+1  # skipping 0 count as this is pre-established
-            if i!= 1:
-                dstr='d'+str(i)
-            else:
-                dstr='d1_1'
             current_layer = dilated_layer(
                 'dilated_layer{}'.format(i),
                 current_layer,
                 dilation,
                 dilation_width,
                 dilation_units,
-                seed_weights_list_trained[dstr+'w'],
-                seed_weights_list_trained[dstr+'b'],
-                seed_weights_list_trained[dstr+'gw'],
-                seed_weights_list_trained[dstr+'gb'],
-                seed_weights_list_trained[dstr+'dw'],
-                seed_weights_list_trained[dstr+'db'],
                 residual = dilation_residual,
                 dense_residual = dilation_residual_dense,
                 to_batch_norm=dilation_batch_norm)
@@ -378,25 +361,33 @@ def inference(seqs,
 
     # reshape for FC layer
     with tf.name_scope('reshape_layer'):
-        print('fully connection before reshaped')
-        print(current_layer.get_shape().as_list())
         fully_connected_width = current_layer.get_shape().as_list()[1] * dilation_units
-        current_layer = tf.reshape(current_layer, [batch_size, fully_connected_width])
+        current_layer = tf.reshape(current_layer, [ascn_class, fully_connected_width])
         print('fully connection reshaped')
         print(current_layer.get_shape().as_list())
 
     # Final full connection(s) into logits
     with tf.name_scope('final_dense'):
-        weights = preload_variable("weights", seed_weights_list_trained['fw'])
-        biases = preload_variable("biases", seed_weights_list_trained['fb'])
+        weights = create_variable('weights', [fully_connected_width, num_classes])
+        biases = create_bias_variable('biases', [num_classes])
         regression_score = tf.add(tf.matmul(current_layer, weights), biases)
-        regression_score = regression_score * cn
         print('Regression score shape')
+        regression_sum_score = tf.reduce_sum(regression_score, 0, keepdims=True)
         print(regression_score.get_shape().as_list())
+        print('Regression score sum shape')
+        print(regression_sum_score.get_shape().as_list())
         _activation_summary(regression_score)
+        _activation_summary(regression_sum_score)
         tf.compat.v1.summary.histogram('final_dense_weights', weights)
 
-    return regression_score
+    return regression_sum_score
+
+
+def l2_loss(regression_score):
+    l2_loss = tf.add_n([tf.nn.l2_loss(v)
+        for v in tf.compat.v1.trainable_variables()
+        if not('bias' in v.name)])
+    return l2_loss
 
 def loss(regression_score, labels, l2_regularization_strength, batch_size):
   """Calculates the loss from the logits and the labels.

@@ -1,4 +1,8 @@
 #!/bin/bash
+PY_PATH=`which python3.8`
+PY_PATH=`dirname $PY_PATH`
+export PATH=$PY_PATH:$PATH
+
 hic_format_input=`readlink -f $1`;
 chrom_size=`readlink -f $hic_format_input | awk '{n=split($1,f,"/"); for(i=1;i<=n-1;i++){printf "%s/", f[i]}}END{printf "3div/ref_chrom_sizes.X.txt"}'`
 

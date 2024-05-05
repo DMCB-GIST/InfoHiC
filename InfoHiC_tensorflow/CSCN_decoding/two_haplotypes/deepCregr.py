@@ -13,6 +13,9 @@ from __future__ import print_function
 import math
 import re
 import tensorflow as tf
+if int(tf.__version__.split(sep=".")[0]) > 1:
+    import tensorflow.compat.v1 as tf
+    tf.disable_v2_behavior()
 import numpy as np
 
 
@@ -79,7 +82,10 @@ def preload_variable(name, data):
 def create_variable(name, shape):
     '''Create a convolution filter variable with the specified name and shape,
     and initialize it using Xavier initialition.'''
-    initializer = tf.contrib.layers.xavier_initializer_conv2d()
+    if int(tf.__version__.split(sep=".")[0]) > 1:
+        initializer = tf.compat.v1.keras.initializers.glorot_normal()
+    else:
+        initializer = tf.contrib.layers.xavier_initializer_conv2d()
     variable = tf.Variable(initializer(shape=shape), name=name)
     # variable = tf.Variable(tf.truncated_normal(shape), name=name)
     return variable
@@ -270,6 +276,7 @@ def inference(seqs,
               dilation_batch_norm,
               num_classes,
               ascn_class,
+              ascn,
               keep_prob_inner,
               keep_prob_outer,
               seed_weights,
@@ -366,8 +373,9 @@ def inference(seqs,
         biases = create_bias_variable('biases', [num_classes])
         regression_score = tf.add(tf.matmul(current_layer, weights), biases)
         print('Regression score shape')
-        regression_sum_score = tf.reduce_sum(regression_score, 0, keepdims=True)
         print(regression_score.get_shape().as_list())
+        regression_score=regression_score*ascn
+        regression_sum_score = tf.reduce_sum(regression_score, 0, keepdims=True)
         print('Regression score sum shape')
         print(regression_sum_score.get_shape().as_list())
         _activation_summary(regression_score)

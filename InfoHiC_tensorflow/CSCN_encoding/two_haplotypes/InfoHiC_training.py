@@ -11,6 +11,9 @@ import sys
 
 import numpy as np
 import tensorflow as tf
+if int(tf.__version__.split(sep=".")[0]) > 1:
+    import tensorflow.compat.v1 as tf
+    tf.disable_v2_behavior()
 import pysam
 
 import deepCregr
@@ -682,7 +685,7 @@ def run_training():
             hap2.append(tmp_chr_seq2)
             hap1_l.append(len(tmp_chr_seq1))
             hap2_l.append(len(tmp_chr_seq2))
-            print(i)
+            print('Chromosome loading ... %d' % (i))
 
         if rc_tag:
             lf=FLAGS.train_data_file_rc

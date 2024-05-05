@@ -25,44 +25,8 @@ wget https://github.com/conda-forge/miniforge/releases/download/24.1.2-0/Minifor
 bash Miniforge3-Linux-x86_64.sh 
 mamba create -c conda-forge -c bioconda -n snakemake snakemake
 conda config --set channel_priority strict
+conda activate snakemake
 snakemake --cores 40 --use-conda example_output/hic_40000/window_1040000.split1_rate0.1
-```
-
-
-# Requirements
-- R (version 3.6.3)
-    - plyr
-    - dplyr
-    - RColorBrewer
-    - reshape2
-    - ggplot2
-    - ggforce
-    - grid
-    - SepctralTAD
-- python (version 3.8.0) 
-    - tensorflow (version 2.11.0)
-    - numpy (version 1.22.0)
-    - pysam (version 0.17.0)
-    - pickle
-    - scipy (version 1.5.0)
-    - neoloop (version 0.2.3)
-    - iced (version 0.5.10)
-    - joblib
-    - sklearn (version 0.22)
-- perl
-    - Bio::DB::Fasta
-- samtools
-
-# Environment settings
-```
-cd /home/dmcblab # enter a home or working directory
-git clone https://github.com/DMCB-GIST/InfoHiC.git
-cd InfoHiC
-cd models
-./download.sh # download a model for cancer Hi-C prediction.
-export InfoHiC_lib=/home/dmcblab/InfoHiC
-export PATH=$InfoHiC_lib/InfoGenomeR_processing:$InfoHiC_lib/InfoHiC_tensorflow:$InfoHiC_lib/post_analysis:$PATH
-export FRAC=0.9 # flexible memory usage (per_process_gpu_memory_fraction=$FRAC). The minimum for testing is 7GB.
 ```
 
 # Inputs

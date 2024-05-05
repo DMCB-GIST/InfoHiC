@@ -1,4 +1,5 @@
 args=commandArgs(T)
+options(scipen=999)
 chr=args[3]
 shift=as.numeric(args[6])
 

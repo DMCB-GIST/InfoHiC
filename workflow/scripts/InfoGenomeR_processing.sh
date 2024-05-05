@@ -23,4 +23,4 @@ cd $input
 ln -s haplotype/hap1.fa hap1.fa
 ln -s haplotype/hap2.fa hap2.fa
 
-cat copy_number.CN_opt.phased  | awk -v OFS="\t" '{if($1==23) $1="X"; $1="chr"$1; print $0}' > ascn_file
+cat copy_number.CN_opt.phased  | awk -v OFS="\t" '{if(NR>1){if($1==23) $1="X"; $1="chr"$1; print $0}}' > ascn_file
