@@ -28,7 +28,7 @@ else
 fi
 
 
-# InfoHiC_post InfoGenomeR_output.${cancer_type}  -w $window_string
+InfoHiC_post InfoGenomeR_output.${cancer_type}  -w $window_string
 
 cd InfoGenomeR_output.${cancer_type}
 
