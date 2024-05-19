@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo -e "Usage: InfoHiC_test <InfoGenomeR_output> [options]\n"
       echo -e "Options:"
-      echo -e  "\t-m, --mode (required)\n \t\t Select the mode (HSCN_encoding, HSCN_decoding)
+      echo -e  "\t-m, --mode (required)\n \t\t Select the mode (CSCN_encoding, CSCN_decoding)
 \t-w, --window (required) \n \t\t window size (1Mb, 2Mb)
 \t-g, --gpu (required) \n \t\t gpu index (default: 0)
 \t-c, --checkpoint (required) \n \t\t trained model checkpoint
@@ -69,10 +69,10 @@ fi
 
 echo "mode = ${mode}"
 
-if [[ $mode == "HSCN_encoding" ]];then
-	code=$InfoHiC_lib\/InfoHiC_tensorflow/HSCN_encoding/contigs/InfoHiC_test_contig.py
-elif [[ $mode == "HSCN_decoding" ]];then
-        code=$InfoHiC_lib\/InfoHiC_tensorflow/HSCN_decoding/contigs/InfoHiC_test_contig.py
+if [[ $mode == "CSCN_encoding" ]];then
+	code=$InfoHiC_lib\/InfoHiC_tensorflow/CSCN_encoding/contigs/InfoHiC_test_contig.py
+elif [[ $mode == "CSCN_decoding" ]];then
+        code=$InfoHiC_lib\/InfoHiC_tensorflow/CSCN_decoding/contigs/InfoHiC_test_contig.py
 else
 	echo "select a mode"
 	exit 1

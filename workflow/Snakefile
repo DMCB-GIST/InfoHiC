@@ -12,6 +12,27 @@ wildcard_constraints:
 
 rule all:
 
+rule hic_mapping_env:
+        conda:
+                "envs/3div.yaml"
+        shell:
+                "echo 'conda environment 3div.yaml'"
+rule InfoHiC_env:
+        conda:
+                "envs/InfoHiC.yaml"
+        shell:
+                "echo 'conda environment InfoHiC.yaml'"
+
+rule InfoHiC_download:
+        output:
+                default_ref=directory(Path(workflow.basedir) / "../humandb/ref"),
+                default_model=directory(Path(workflow.basedir) / "../models/breast_model"),
+                example_hic_reads=directory(Path(workflow.basedir) / "../examples/T47D_chromosomes_8_14"),
+                example_InfoHiC_output=directory(Path(workflow.basedir) / "../examples/T47D_hic_reads_subset")
+
+        shell:
+                "workflow/scripts/InfoHiC_download.sh"
+
 rule hic_mapping:
 	input:
 		ref="{root}/ref/hg19.fa",
@@ -81,5 +102,27 @@ rule InfoHiC_model_save:
                 "envs/InfoHiC.yaml"
         shell:  
                 "workflow/scripts/InfoHiC_model_save.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.seed_file} {wildcards.epoch} {input.ref} {input.hic_split_input} {input.InfoHiC_training_input} {output.InfoHiC_training_model_output}"
+
+rule InfoHiC_prediction:
+        input:  
+                infogenomer_processing_input=rules.InfoGenomeR_processing.output.infogenomer_processing_output,
+                model="{root}/model"
+        output: 
+                InfoHiC_prediction_output=directory("{root}/InfoHiC_prediction/hic_{resolution}.window_{window}.{cancer_type}.{mode}.gpu{gpu}")
+        conda:  
+                "envs/InfoHiC.yaml"
+        shell:  
+                "workflow/scripts/InfoHiC_prediction.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.model} {input.infogenomer_processing_input} {output.InfoHiC_prediction_output}"
+
+
+rule InfoHiC_post_process:
+        input:  
+                InfoHiC_prediction_input=rules.InfoHiC_prediction.output.InfoHiC_prediction_output
+        output:
+                InfoHiC_post_process_output=directory("{root}/InfoHiC_prediction/hic_{resolution}.window_{window}.{cancer_type}.{mode}.gpu{gpu}.post_process")
+        conda:
+                "envs/InfoHiC.yaml"
+        shell:
+                "workflow/scripts/InfoHiC_post_process.sh {wildcards.window} {wildcards.cancer_type} {input.InfoHiC_prediction_input} {output.InfoHiC_post_process_output}"
 
 
