@@ -38,7 +38,7 @@ snakemake --core all --use-conda InfoHiC_env
 ```
 
 # Running InfoHiC prediction
-The InfoHiC workflow is run by the Snakemake.
+The InfoHiC workflow is run by the snakemake.
 ## Starting from InfoGenomeR output
 ### Inputs
 - InfoHiC trained model
