@@ -1,8 +1,12 @@
 #!/bin/bash
 PY_PATH=`which python3.8`
+conda_base=`which conda`
+conda_base=`dirname ${conda_base}`
+
 PY_PATH=`dirname $PY_PATH`
 LD_LIB=${PY_PATH}/../lib
-export LD_LIBRARY_PATH=${LD_LIB}:$LD_LIBRARY_PATH
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib
+export LD_LIBRARY_PATH=$conda_base\/../lib/:${LD_LIB}:$LD_LIBRARY_PATH
 export PATH=$PY_PATH:$PATH
 
 LIB=`readlink -f ${BASH_SOURCE[0]} | awk '{n=split($1,f,"/"); for(i=1;i<=n-3;i++){printf "%s/", f[i]}}'`

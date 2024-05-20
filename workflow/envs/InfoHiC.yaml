@@ -15,6 +15,7 @@ dependencies:
         - r-rcolorbrewer
         - r-reshape2
         - r-ggforce
+        - ncurses
         - cudatoolkit=11.2
         - cudnn=8.1.0
         - python=3.8.0

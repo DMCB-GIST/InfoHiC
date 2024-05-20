@@ -42,7 +42,7 @@ python2 $dir\/hic_pipeline/bin/make_paired_sam.py 1.filtered.sam 2.filtered.sam 
 
 samtools view  -S merged.bam | python2 $dir\/hic_pipeline/bin/filter_self_reads_stdin.py | samtools view -Sb -t $ref.fai  -o filtered.merged.bam
 
-samtools sort filtered.merged.bam > sorted.filtered.merged.bam
+samtools sort filtered.merged.bam -@ 20 > sorted.filtered.merged.bam
 
 
 java -Xmx200g -jar $dir\/hic_pipeline/picard.jar MarkDuplicates VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=TRUE ASSUME_SORTED=TRUE I=sorted.filtered.merged.bam O=nodup.sorted.filtered.merged.bam METRICS_FILE=nodup.sorted.filtered.merged.bam.metrics
