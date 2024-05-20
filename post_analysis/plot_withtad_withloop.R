@@ -9,6 +9,7 @@ gap_view=F
 M_plot_gap=1000000
 max_depth=as.numeric(args[2])
 
+
 t=read.table(args[1])
 library("reshape2")
 library("ggplot2")
@@ -21,6 +22,47 @@ t[t[,3]<0,3]=0
 
 t[t[,3]>max_depth,3]=max_depth
 #t[t[,4]>max_depth,4]=max_depth
+
+
+if(args[10]!="null" && file.exists(args[10]) && file.info(args[10])$size != 0){
+	contig_refcoor=read.table(args[10],stringsAsFactors=F)
+
+	w=which(contig_refcoor[,8]=="-")
+	tmp=contig_refcoor[w,9]
+	contig_refcoor[w,9]=contig_refcoor[w,10]
+	contig_refcoor[w,10]=tmp
+
+
+	contig_refcoor$start_x=contig_refcoor[,9]+100000
+	contig_refcoor$start_y=contig_refcoor[,9]-100000
+	contig_refcoor$end_x=contig_refcoor[,10]+100000
+	contig_refcoor$end_y=contig_refcoor[,10]-100000
+
+	w=which(contig_refcoor[,8]=="+")
+	contig_refcoor$start_text_x[w]=contig_refcoor[w,9]+1000000+80000
+	contig_refcoor$start_text_y[w]=contig_refcoor[w,9]-1000000+80000
+	w=which(contig_refcoor[,8]=="-")
+	contig_refcoor$start_text_x[w]=contig_refcoor[w,9]+1000000-80000
+	contig_refcoor$start_text_y[w]=contig_refcoor[w,9]-1000000-80000
+
+	w=which(contig_refcoor[,8]=="+")
+	contig_refcoor$end_text_x[w]=contig_refcoor[w,10]+1000000-80000
+	contig_refcoor$end_text_y[w]=contig_refcoor[w,10]-1000000-80000
+	w=which(contig_refcoor[,8]=="-")
+	contig_refcoor$end_text_x[w]=contig_refcoor[w,10]+1000000+80000
+	contig_refcoor$end_text_y[w]=contig_refcoor[w,10]-1000000+80000
+
+	for(i in 1:nrow(contig_refcoor)){
+		if(contig_refcoor[i,8]=="+"){
+			contig_refcoor$start_name[i]=paste(contig_refcoor[i,4],":",contig_refcoor[i,5],sep="")
+			contig_refcoor$end_name[i]=paste(contig_refcoor[i,4],":",contig_refcoor[i,6],sep="")
+		}else{
+                        contig_refcoor$end_name[i]=paste(contig_refcoor[i,4],":",contig_refcoor[i,5],sep="")
+			contig_refcoor$start_name[i]=paste(contig_refcoor[i,4],":",contig_refcoor[i,6],sep="")
+		}
+	}
+
+}
 
 
 if(args[5]!="null" && file.exists(args[5]) && file.info(args[5])$size != 0){
@@ -46,10 +88,10 @@ if(args[5]!="null" && file.exists(args[5]) && file.info(args[5])$size != 0){
 		le_line=data.frame()
 		for(j in 1:nrow(le)){
 			le_line[j,1]=le[j,3]
-			le_line[j,2]=le[j,5] + 100000
-			le_line[j,3]=le[j,5] - 100000
-			le_line[j,4]=le[j,6] + 100000
-			le_line[j,5]=le[j,6] - 100000
+			le_line[j,2]=le[j,5] + 200000
+			le_line[j,3]=le[j,5] - 200000
+			le_line[j,4]=le[j,6] + 200000
+			le_line[j,5]=le[j,6] - 200000
 			le_line[j,6]=le[j,13]
 		}
 	}
@@ -64,10 +106,10 @@ if(args[6]!="null" && file.exists(args[6]) && file.info(args[6])$size != 0){
 		lh_line=data.frame()
 		for(j in 1:nrow(lh)){
 			lh_line[j,1]=lh[j,3]
-			lh_line[j,2]=lh[j,5] + 200000
-			lh_line[j,3]=lh[j,5] - 200000
-			lh_line[j,4]=lh[j,6] + 200000
-			lh_line[j,5]=lh[j,6] - 200000
+			lh_line[j,2]=lh[j,5] + 300000
+			lh_line[j,3]=lh[j,5] - 300000
+			lh_line[j,4]=lh[j,6] + 300000
+			lh_line[j,5]=lh[j,6] - 300000
 			lh_line[j,6]=lh[j,2]
 		}
 	}
@@ -83,10 +125,10 @@ if(args[7]!="null" && file.exists(args[7]) && file.info(args[7])$size != 0){
 		lte_line=data.frame()
 		for(j in 1:nrow(lte)){
 			lte_line[j,1]=lte[j,3]
-			lte_line[j,2]=lte[j,5] + 300000
-			lte_line[j,3]=lte[j,5] - 300000
-			lte_line[j,4]=lte[j,6] + 300000
-			lte_line[j,5]=lte[j,6] - 300000
+			lte_line[j,2]=lte[j,5] + 400000
+			lte_line[j,3]=lte[j,5] - 400000
+			lte_line[j,4]=lte[j,6] + 400000
+			lte_line[j,5]=lte[j,6] - 400000
 			lte_line[j,6]=lte[j,2]
 		}
 	}
@@ -141,8 +183,8 @@ if(args[3]!="null" && file.exists(args[3]) && file.info(args[3])$size != 0){
 if(args[8]!="null"){
 	if(args[8]!="all"){
 		le_line_gene=le_line[le_line[,6] == args[8],]
-		le_line_gene[,2] = le_line_gene[,2] + 400000
-		le_line_gene[,3] = le_line_gene[,3] - 400000
+		le_line_gene[,2] = le_line_gene[,2] + 500000
+		le_line_gene[,3] = le_line_gene[,3] - 500000
 #		g=g+geom_text(aes(x=V2, y=V3, label=V6), data=le_line_gene, inherit.aes=F,angle=-45,size=0.2)
 		sub_le_line=le_line[le_line[,6]==args[8],];
 		if(args[5]!="null"){
@@ -151,8 +193,8 @@ if(args[8]!="null"){
 
 	}else{
                 le_line_gene=le_line
-		le_line_gene[,2] = le_line_gene[,2] + 400000
-		le_line_gene[,3] = le_line_gene[,3] - 400000
+		le_line_gene[,2] = le_line_gene[,2] + 500000
+		le_line_gene[,3] = le_line_gene[,3] - 500000
 #		g=g+geom_text(aes(x=V2, y=V3, label=V6), data=le_line_gene, inherit.aes=F,angle=-45,size=0.2)
 		if(args[5]!="null"){
 			g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5),data=le_line, inherit.aes=F, color="gray")
@@ -195,11 +237,21 @@ if(args[4]!="null" && file.exists(args[4]) &&  file.info(args[4])$size != 0){
 #	g=g+geom_text(aes(x=V1, y=V2, label=V1), data=fus_line, inherit.aes=F, angle=45, size=0.2)
 }
 
+
+if(args[10]!="null" && file.exists(args[10]) && file.info(args[10])$size != 0){
+	g=g+geom_segment(aes(x=start_x, y=start_y, xend=end_x, yend=end_y),data=contig_refcoor, inherit.aes=F, color="#18489C",arrow = arrow(length = unit(1,"mm")), lwd=0.5)
+	g=g+geom_text(aes(x=start_text_x, y=start_text_y, label=start_name), data=contig_refcoor, inherit.aes=F, angle=135, size=1)
+	g=g+geom_text(aes(x=end_text_x, y=end_text_y, label=end_name), data=contig_refcoor, inherit.aes=F, angle=135, size=1)
+}
+
+
+
+
 if(args[9]!="null" && file.exists(args[9]) &&  file.info(args[9])$size != 0){
 	library("ggforce")
 	loop=read.table(args[9],stringsAsFactors=F)
 	loop$V3=40000
-	g=g+geom_circle(aes(x0=V1, y0=V2, r=V3),color='#18489C', data= loop,inherit.aes=F)
+	g=g+geom_circle(aes(x0=V1, y0=V2, r=V3),color='#00A087FF', data= loop,inherit.aes=F, lwd=0.3)
 }
 g=g+theme_void() + theme(legend.position="none")
 

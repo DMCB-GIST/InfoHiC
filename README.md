@@ -1,5 +1,5 @@
 # InfoHiC
-- InfoHiC is a method to predict 3D genome folding from complex DNA rearrangements, which enables the training and validation usage of cancer Hi-C data. InfoHiC provides a decomposed level of interaction views of multiple contigs from the cancer Hi-C matrix. InfoHiC is composed of convolutional neural network (CNNs) that outputs chromatin interactions of genomic contigs and merges them in the total Hi-C views, based on a haplotype-specific copy number (HSCN) encoding that represent genomic variants in the contig matrix.
+- InfoHiC is a method to predict 3D genome folding from complex DNA rearrangements, which enables the training and validation usage of cancer Hi-C data. InfoHiC provides a decomposed level of interaction views of multiple contigs from the cancer Hi-C matrix. InfoHiC is composed of convolutional neural network (CNNs) that outputs chromatin interactions of genomic contigs and merges them in the total Hi-C views, based on a contig-specific copy number (CSCN) encoding that represent genomic variants in the contig matrix.
 
 <p align="center">
     <img width="1500" src="https://github.com/DMCB-GIST/InfoHiC/blob/main/doc/overview.png">
@@ -9,144 +9,142 @@
 
 # Cancer Hi-C prediction models
 - Brain
-    - [NPC 1Mb CSCN decoding 40kb](https://zenodo.org/records/10547043/files/brain_model_1Mb.tar.gz)
-    - [NPC 2Mb CSCN decoding 40kb](https://zenodo.org/record/7559281/files/breast_model.tar.gz)
+    - [NPC 1Mb CSCN decoding 40kb](https://zenodo.org/records/11201557/files/brain_model_1Mb.tar.gz)
+    - [NPC 2Mb CSCN decoding 40kb](https://zenodo.org/records/10544099/files/brain_model.tar.gz)
 - Breast
-    - [T47D 1Mb CSCN encoding 40kb](https://zenodo.org/records/10547765/files/breast_model_1Mb.tar.gz)
-    - [T47D 2Mb CSCN encoding 40kb](https://zenodo.org/record/7559281/files/brain_model.tar.gz)
+    - [T47D 1Mb CSCN encoding 40kb](https://zenodo.org/records/11201552/files/breast_model_1Mb.tar.gz)
+    - [T47D 2Mb CSCN encoding 40kb](https://zenodo.org/records/10544099/files/breast_model.tar.gz)
 
 - Hematopoietic
-    - [K562 1Mb CSCN encoding 10kb](https://zenodo.org/records/10547768/files/Hematopoietic_model_1Mb.tar.gz)
+    - [K562 1Mb CSCN encoding 10kb](https://zenodo.org/records/11201627/files/Hematopoietic_model_1Mb.tar.gz)
 
-# Requirements
-- R (version 3.6.3)
-    - plyr
-    - dplyr
-    - RColorBrewer
-    - reshape2
-    - ggplot2
-    - ggforce
-    - grid
-    - SepctralTAD
-- python (version 3.8.0) 
-    - tensorflow (version 2.11.0)
-    - numpy (version 1.22.0)
-    - pysam (version 0.17.0)
-    - pickle
-    - scipy (version 1.5.0)
-    - neoloop (version 0.2.3)
-    - iced (version 0.5.10)
-    - joblib
-    - sklearn (version 0.22)
-- perl
-    - Bio::DB::Fasta
-- samtools
-
-# Environment settings
+# Snakemake install
+- The InfoHiC workflow is run by the snakemake.
+- Environments are described in workflow/envs.
+- Rules are described in workflow/Snakefile.
 ```
-cd /home/dmcblab # enter a home or working directory
-git clone https://github.com/DMCB-GIST/InfoHiC.git
+wget https://github.com/conda-forge/miniforge/releases/download/24.1.2-0/Miniforge3-Linux-x86_64.sh
+bash Miniforge3-Linux-x86_64.sh
+mamba create -c conda-forge -c bioconda -n snakemake snakemake
+conda config --set channel_priority strict
+conda activate snakemake
+```
+
+# dataset download
+```
+snakemake --cores all --use-conda InfoHiC_download
+```
+# conda environment setting
+```
+snakemake --core all --use-conda hic_mapping_env
+snakemake --core all --use-conda InfoHiC_env
+```
+
+# InfoHiC training
+- The training step can be skipped because we provide InfoHiC trained models.
+- It takes two weeks to train on 1 Mb windows (~10 epoches).
+- On 2 Mb windows, it takes a month.
+- Take the one-day example on 1 Mb windows using the subset of T47D Hi-C reads.
+## Starting from InfoGenomeR output
+### Inputs
+- InfoGenomeR output from WGS (https://github.com/dmcblab/InfoGenomeR)
+- Hi-C reads
+### Workflow
+```
+# go to the InfoHiC base directory
 cd InfoHiC
-cd models
-./download.sh # download a model for cancer Hi-C prediction.
-export InfoHiC_lib=/home/dmcblab/InfoHiC
-export PATH=$InfoHiC_lib/InfoGenomeR_processing:$InfoHiC_lib/InfoHiC_tensorflow:$InfoHiC_lib/post_analysis:$PATH
-export FRAC=0.9 # flexible memory usage (per_process_gpu_memory_fraction=$FRAC). The minimum for testing is 7GB.
+
+# make the root output directory
+root_dir=InfoHiC_training_output
+mkdir -p ${root_dir}
+
+# link the reference and the seed file in the root directory
+ln -s ${PWD}/humandb/ref ${root_dir}/ref
+ln -s ${PWD}/models/seed_file ${root_dir}/seed_file
+
+# Place Hi-C reads and the InfoGenomeR output in the root directory
+cp -r ${PWD}/examples/T47D_hic_reads_subset ${root_dir}/hic_reads
+cp -r examples/T47D_chromosomes_8_14/InfoGenomeR_output ${root_dir}/InfoGenomeR_output
+
+# set wildcards
+resolution=40000
+
+# Run Hi-C read mapping
+snakemake --cores all --use-conda ${root_dir}/hic_${resolution}/3div
+
+
+# set wildcards
+window=1040000
+split_idx=1
+split_rate=0.1 # 0.1 for valid and test, and 0.8 for train
+
+# Run Hi-C data post process and split
+snakemake --cores all --use-conda ${root_dir}/hic_${resolution}/window_${window}.split${split_idx}_rate${split_rate}
+
+# set wildcards
+cancer_type=BRCA
+mode=CSCN_encoding
+gpu=1
+epoch=1
+
+# InfoHiC training
+snakemake --cores all --use-conda ${root_dir}/InfoHiC_training.${cancer_type}/hic_${resolution}.window_${window}.split${split_idx}_rate${split_rate}/${mode}/gpu${gpu}.epoch${epoch}
 ```
 
-# Inputs
-- Following inputs are required, which can be generated by InfoGenomeR (https://github.com/dmcblab/InfoGenomeR)
-	- contigs.fa
-	- contigs.index
-	- contigs.bed
-	- contigs.cn_file
-	- sv_window
-	- ref_window
-# Outputs
-- contig Hi-C matrix and total Hi-C matrix
-- neoloop and neo-TAD annotation
-- Enhancer hijacking annotation
+# Export an InfoHiC model
+- After training, select a model and export it
+``` 
 
+# List the models, and select a best_checkpoint saved at the last step
+model_dir=${root_dir}/InfoHiC_training.${cancer_type}/hic_${resolution}.window_${window}.split${split_idx}_rate${split_rate}/${mode}/gpu${gpu}.epoch${epoch}
+ls -l ${model_dir}/training_run_data_40kb_ascn_ACGT_rc_shift 
 
-# Running InfoHiC
-- InfoGenomeR_processing
-```
-Usage: InfoGenomeR_processing <InfoGenomeR_output> <fasta_file>
+# This is an example of best_checkpoint 
+model=${model_dir}/training_run_data_40kb_ascn_ACGT_rc_shift/best_checkpoint-51198
 
-Options:
-        -e, --ens (required)
-                 Ensembl annotation
-        -s, --se (required)
-                 Super enhancer annotation
-        -t, --te (required)
-                 Typical enhancer annotation
-        -h, --help
+# copy the model into the model_dir base with the best_checkpoint prefix
+cp -r $model.data-00000-of-00001 ${model_dir}/best_checkpoint.data-00000-of-00001
+cp -r $model.index ${model_dir}/best_checkpoint.index
+cp -r $model.meta ${model_dir}/best_checkpoint.meta
+
+# export it as a contig model finally
+snakemake --cores all --use-conda ${model_dir}.model
 ```
 
-- InfoHiC_test
+# InfoHiC prediction
+- Hi-C matrices are predicted using the InfoHiC model.
+## Starting from InfoGenomeR output
+### Inputs
+- InfoHiC trained model
+- InfoGenomeR output from WGS (https://github.com/dmcblab/InfoGenomeR)
+### Workflow
 ```
-Usage: InfoHiC_test <InfoGenomeR_output> [options]
+# go to the InfoHiC base directory
+cd InfoHiC
 
-Options:
-        -m, --mode (required)
-                 Select the mode (HSCN_encoding, HSCN_decoding)
-        -w, --window (required)
-                 window size (1Mb, 2Mb)
-        -g, --gpu (required)
-                 gpu index (default: 0)
-        -c, --checkpoint (required)
-                 trained model checkpoint
+# make the root output directory
+root_dir=InfoHiC_prediction_output
+mkdir -p ${root_dir}
 
-        -h, --help
-```
-- InfoHiC post analysis
-```
-Usage: InfoHiC_post <InfoHiC_output> [options]
+# Link the reference and the InfoHiC model in the root directory
+ln -s ${PWD}/humandb/ref ${root_dir}/ref
+ln -s ${PWD}/models/breast_model ${root_dir}/model
 
-Options:
-        -w, --window (required)
-                 window size (1Mb, 2Mb)
-        -m, --true_matrix (optional)
-                 comparison with the true matrix. Enter a true matrix directory
-        -h, --help
-```
+# take the InfoGenomeR output example
+cp -r examples/T47D_chromosomes_8_14/InfoGenomeR_output ${root_dir}/InfoGenomeR_output
 
-# Tutorial 1 (T47D)
-- Download a tutorial file
-```
-wget https://zenodo.org/record/7559305/files/tutorial3_v2.tar.gz ## T47D
-tar -xvf tutorial3_v2.tar.gz
-cd tutorial3_v2/total_job_test
-```
-- Process the InfoGenomeR output
-```
-### Process the InfoGenomeR output
-ref=GRCh37.fa ## reference genome fasta file without the chr prefix.
-InfoGenomeR_processing InfoGenomeR_output $ref -e ${InfoHiC_lib}/humandb/hg19_ensGene.txt -s ${InfoHiC_lib}/humandb/SE_package.bed.BRCA.rf -t ${InfoHiC_lib}/humandb/TE_package.bed.BRCA.rf
-```
-- Predict Hi-C matrix
-```
-### Predict Hi-C matrix
-InfoHiC_test InfoGenomeR_output -m HSCN_encoding -w 2Mb -g 0 -c ${InfoHiC_lib}/models/breast_model/T47D_transfer_2Mb
-```
+# set wildcards 
+resolution=40000
+window=2000000
+cancer_type=BRCA
+model=CSCN_encoding
+gpu=1 # use the available gpu
 
-- perform a post analysis
-```
-- post analysis
-wget https://zenodo.org/record/7559345/files/T47D_experiment.tar.gz
-tar -xvf T47D_experiment.tar.gz
-InfoHiC_post InfoGenomeR_output -w 2Mb -m T47D_experiment
-cd InfoGenomeR_output/karyotypes/euler.8.14/
-```
+# run the InfoHiC workflow
+snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
 
-- karyotypes.pdf
-<p align="center">
-    <img width="400" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/karyotypes.png">
-  </a>
-</p>
+# run the post process
+snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
 
-- all.pdf 
-<p align="center">
-    <img width="700" src="https://github.com/dmcb-gist/InfoHiC/blob/main/doc/euler.8.14/HiC_prediction.png">
-  </a>
-</p>
+
+```

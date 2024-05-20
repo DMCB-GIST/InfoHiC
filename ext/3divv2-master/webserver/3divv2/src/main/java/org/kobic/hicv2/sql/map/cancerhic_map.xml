@@ -1,0 +1,707 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.kobic.hicv2.cancerhic.mapper.CancerHiCMapper">
+<!-- 	<select id="getAnyInteractions500kMat" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.InteractionSparseMatVo">
+		SELECT
+			a.chrom1
+			, a.chrom2 
+			, a.intensities
+			, a.nrow
+			, a.ncol
+			, a.current_row
+		FROM (
+			SELECT
+				a.chrom1
+				, a.chrom2
+				, a.intensities
+				, a.nrow
+				, a.ncol
+				, a.current_row
+			FROM ${sample.table} a, I1_SampleInfoV2 b
+			WHERE a.sampleId=b.id
+			AND b.sample=#{sample.sample}
+			AND a.chrom1 IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			AND a.chrom2 IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+		) a, (
+			SELECT
+				chrom1
+				, chrom2
+				, ord1
+				, ord2
+			FROM (
+				SELECT
+					CONCAT('chr', chrom)	AS chrom1
+					, @rownum := @rownum+1	AS ord1
+				FROM hg38_genome_length_info a, (SELECT @rownum:=0) b
+				WHERE chromosome IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			ORDER BY id
+			) a, 
+			(
+				SELECT
+					CONCAT('chr', chrom)	AS chrom2
+					, @rownum2 := @rownum2+1	AS ord2
+				FROM hg38_genome_length_info a, (SELECT @rownum2:=0) b
+				WHERE chromosome IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			) b
+		) b
+		WHERE a.chrom1=b.chrom1 
+		AND a.chrom2=b.chrom2
+		ORDER by b.ord1, b.ord2
+	</select> -->
+	
+	<select id="getAnyInteractions500kMatV3" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.InteractionSparseMatV2Vo">
+		SELECT
+			a.chrom1
+			, a.chrom2 
+			, a.intensities
+			, a.nrow
+			, a.ncol
+			, a.current_row
+		FROM (
+			<foreach item="item1" collection="regions" separator='UNION'>
+				<foreach item="item2" collection="regions" separator='UNION' >
+						SELECT
+							a.chrom1
+							, a.chrom2
+							, a.intensities
+							, a.nrow
+							, a.ncol
+							, a.current_row
+						FROM ${sample.table} a, I1_SampleInfoV2 b USE INDEX(PRIMARY)
+						WHERE a.sampleId=b.id
+						AND b.sample = #{sample.sample}
+						AND a.chrom1 = #{item1.chrom}
+						AND a.current_row <![CDATA[>=]]> ${item1.startBin} 
+						AND a.current_row <![CDATA[<=]]> ${item1.endBin}
+						AND a.chrom2 = #{item2.chrom}
+				</foreach>
+			</foreach>
+		) a, (
+			SELECT
+				chrom1
+				, chrom2
+				, ord1
+				, ord2
+			FROM (
+				SELECT
+					CONCAT('chr', chrom)	AS chrom1
+					, @rownum := @rownum+1	AS ord1
+				FROM hg38_genome_length_info a, (SELECT @rownum:=0) b
+				WHERE chromosome IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			ORDER BY id
+			) a, 
+			(
+				SELECT
+					CONCAT('chr', chrom)	AS chrom2
+					, @rownum2 := @rownum2+1	AS ord2
+				FROM hg38_genome_length_info a, (SELECT @rownum2:=0) b
+				WHERE chromosome IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			) b
+		) b
+		WHERE a.chrom1=b.chrom1 
+		AND a.chrom2=b.chrom2
+		ORDER by b.ord1, b.ord2
+	</select>
+<!-- 
+	<select id="getAnyInteractions500kMatV3Bak" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.InteractionSparseMatV2Vo">
+		SELECT
+			a.chrom1
+			, a.chrom2 
+			, a.intensities
+			, a.nrow
+			, a.ncol
+			, a.current_row
+		FROM (
+			SELECT
+				a.chrom1
+				, a.chrom2
+				, a.intensities
+				, a.nrow
+				, a.ncol
+				, a.current_row
+			FROM ${sample.table} a USE INDEX(chrom_idx), I1_SampleInfoV2 b
+			WHERE a.sampleId=b.id
+			AND b.sample=#{sample.sample}
+			AND a.chrom1 IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			AND a.chrom2 IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+		) a, (
+			SELECT
+				chrom1
+				, chrom2
+				, ord1
+				, ord2
+			FROM (
+				SELECT
+					CONCAT('chr', chrom)	AS chrom1
+					, @rownum := @rownum+1	AS ord1
+				FROM hg38_genome_length_info a, (SELECT @rownum:=0) b
+				WHERE chromosome IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			ORDER BY id
+			) a, 
+			(
+				SELECT
+					CONCAT('chr', chrom)	AS chrom2
+					, @rownum2 := @rownum2+1	AS ord2
+				FROM hg38_genome_length_info a, (SELECT @rownum2:=0) b
+				WHERE chromosome IN 
+				<foreach item="item" index="index" collection="regions" open='(' separator=',' close=')' >
+					#{item.chrom}
+				</foreach>
+			) b
+		) b
+		WHERE a.chrom1=b.chrom1 
+		AND a.chrom2=b.chrom2
+		ORDER by b.ord1, b.ord2
+	</select> -->
+
+	<select id="getSampleList" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.SampleInfoVo">
+		SELECT
+			@rownum:=@rownum+1 AS id
+			, a.sample_id
+			, a.type
+			, a.sample
+			, a.desc
+			, a.valid_yn
+			, a.file_name
+			, a.file_size
+			, a.table_name
+			, a.resolution
+		FROM (
+			SELECT
+				MAX(a.type)			AS type
+				, a.sample			AS sample
+				, MAX(a.`desc`)		AS `desc`
+				, MAX(a.valid_yn)	AS valid_yn
+				, MAX(a.file_name)	AS file_name
+				, MAX(a.file_size)	AS file_size
+				, MAX(a.table_name)	AS table_name
+				, MAX(a.resolution)	AS resolution
+				, MAX(a.id)			AS sample_id
+			FROM I1_SampleInfoV2 a, I1_SampleGroupInfo b
+			WHERE a.sample=b.sample_id
+			AND a.valid_yn='Y'
+			<if test="keyword != null">
+				AND (
+					a.desc LIKE CONCAT('%', #{keyword}, '%') 
+					OR
+					a.sample LIKE CONCAT('%', #{keyword}, '%')
+					OR
+					b.type LIKE CONCAT('%', #{keyword}, '%')
+					OR
+					b.name LIKE CONCAT('%', #{keyword}, '%')
+					OR
+					b.property LIKE CONCAT('%', #{keyword}, '%')
+				)
+			</if>
+			GROUP BY sample
+		) a, (SELECT (@rownum:=0)=0) b
+		ORDER BY a.sample
+	</select>
+	
+	<select id="getSampleListBak" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.SampleInfoVo">
+		SELECT
+			@rownum:=@rownum+1 AS id
+			, a.sample_id
+			, a.type
+			, a.sample
+			, a.desc
+			, a.valid_yn
+			, a.file_name
+			, a.file_size
+			, a.table_name
+			, a.resolution
+		FROM (
+			SELECT
+				MAX(a.type)			AS type
+				, a.sample			AS sample
+				, MAX(a.`desc`)		AS `desc`
+				, MAX(a.valid_yn)	AS valid_yn
+				, MAX(a.file_name)	AS file_name
+				, MAX(a.file_size)	AS file_size
+				, MAX(a.table_name)	AS table_name
+				, MAX(a.resolution)	AS resolution
+				, MAX(a.id)			AS sample_id
+			FROM I1_SampleInfoV2 a, I1_StudyInfo b
+			WHERE a.study_id=b.study_id
+			AND a.valid_yn='Y'
+			<if test='study_id != null'>
+				AND b.study_id=${study_id}
+			</if>
+			<if test="keyword != null">
+				AND (
+					a.desc LIKE CONCAT('%', #{keyword}, '%') 
+					OR
+					a.sample LIKE CONCAT('%', #{keyword}, '%')
+				)
+			</if>
+			GROUP BY sample
+		) a, (SELECT (@rownum:=0)=0) b
+		ORDER BY a.sample
+	</select>
+
+	<select id="getSampleList20200922" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.SampleInfoVo">
+		SELECT
+			@rownum:=@rownum+1 AS id
+			, a.type
+			, a.sample
+			, a.desc
+			, a.valid_yn
+			, a.file_name
+			, a.file_size
+			, a.table_name
+			, a.resolution
+		FROM (
+			SELECT
+				MAX(a.type)			AS type
+				, a.sample			AS sample
+				, MAX(a.`desc`)		AS `desc`
+				, MAX(a.valid_yn)	AS valid_yn
+				, MAX(a.file_name)	AS file_name
+				, MAX(a.file_size)	AS file_size
+				, MAX(a.table_name)	AS table_name
+				, MAX(a.resolution)	AS resolution
+			FROM I1_SampleInfoV2 a, I1_StudyInfo b
+			WHERE a.study_id=b.study_id
+			AND a.valid_yn='Y'
+			<if test="type == 'case'">
+				<if test='study_id != null'>
+					AND b.study_id=${study_id}
+
+					<if test="keyword != null">
+						AND a.desc LIKE CONCAT('%', #{keyword}, '%')
+					</if>
+				</if>
+			</if>
+			<if test="type == 'control'">
+<!-- 				AND b.study_id = 13 -->
+				AND b.study_id=${study_id}
+				<if test="keyword != null">
+					AND a.desc LIKE CONCAT('%', #{keyword}, '%')
+				</if>
+			</if>
+			<if test="type == 'entire'">
+				AND b.study_id=${study_id}
+				<if test="keyword != null">
+					AND a.desc LIKE CONCAT('%', #{keyword}, '%')
+				</if>
+			</if>
+			GROUP BY sample
+		) a, (SELECT (@rownum:=0)=0) b
+		ORDER BY a.sample
+	</select>
+
+	<select id="getSampleList2" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.SampleInfoVo">
+		SELECT
+			@rownum:=@rownum+1 AS id
+			, a.type
+			, a.sample
+			, a.desc
+			, a.valid_yn
+			, a.file_name
+			, a.file_size
+			, a.table_name
+			, a.resolution
+		FROM (
+			SELECT
+				MAX(type)			AS type
+				, sample			AS sample
+				, MAX(`desc`)		AS `desc`
+				, MAX(valid_yn)		AS valid_yn
+				, MAX(file_name)	AS file_name
+				, MAX(file_size)	AS file_size
+				, MAX(table_name)	AS table_name
+				, MAX(resolution)	AS resolution
+			FROM I1_SampleInfoV2
+			WHERE valid_yn='Y'
+			<if test='study_id != null'>
+				AND study_id=${study_id}
+			</if>
+			<if test="exact_sample != null">
+				AND sample =#{keyword}
+			</if>
+			<if test="type == 'case'">
+				AND sample LIKE CONCAT(#{keyword}, '%', 'T')
+			</if>
+			<if test="type == 'control'">
+				AND sample LIKE CONCAT(#{keyword}, '%', 'N')
+			</if>
+			<if test="type == 'entire' and keyword != null">
+				AND sample LIKE CONCAT(#{keyword}, '%')
+			</if>
+			GROUP BY sample
+		) a, (SELECT (@rownum:=0)=0) b
+		ORDER BY a.sample
+	</select>
+	
+	<select id="getStudyInfo" resultType="org.kobic.hicv2.cancerhic.vo.StudyInfoVo">
+		SELECT
+			-1																			AS study_id
+			, 'All'																		AS study_name
+			, (SELECT COUNT(*) FROM I1_SampleInfoV2 WHERE resolution=40000)				AS count
+		UNION ALL
+		SELECT
+			study_id		AS study_id
+			, study_name	AS study_name
+			, (SELECT COUNT(*) FROM I1_SampleInfoV2 WHERE study_id=a.study_id AND resolution=40000) count
+		FROM I1_StudyInfo a
+	</select>
+	
+	<select id="getSampleTableName" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.SampleInfoVo">
+		SELECT
+			table_name
+			, resolution
+		FROM I1_SampleInfoV2
+		WHERE sample=#{sample} 
+		AND resolution=${resolution}
+	</select>
+	
+	<select id="getSampleListBak20200729" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.SampleInfoVo">
+		SELECT
+			@rownum:=@rownum+1 AS id
+			, a.type
+			, a.sample
+			, a.desc
+			, a.valid_yn
+			, a.file_name
+			, a.file_size
+			, a.table_name
+			, a.resolution
+		FROM (
+			SELECT
+				*
+			FROM I1_SampleInfoV2
+			WHERE valid_yn='Y'
+			<if test="exact_sample != null">
+				AND sample =#{keyword}
+			</if>
+			<if test="type == 'case'">
+				AND sample LIKE CONCAT(#{keyword}, '%', 'T')
+			</if>
+			<if test="type == 'control'">
+				AND sample LIKE CONCAT(#{keyword}, '%', 'N')
+			</if>
+			<if test="type == 'entire' and keyword != null">
+				AND sample LIKE CONCAT(#{keyword}, '%')
+			</if>
+		) a, (SELECT (@rownum:=0)=0) b
+		ORDER BY a.sample
+	</select>
+	
+	<select id='getGenomeSizeHg18' resultType='org.kobic.hicv2.cancerhic.vo.GenomeLengthVo'>
+		SELECT 
+			chrom, chromosome, length, len_5k, len_40k, len_500k 
+		FROM hg38_genome_length_info
+	</select>
+
+	<select id='getChromosomeList' resultType="java.lang.String">
+		SELECT * FROM (
+			SELECT chromosome FROM hg38_genome_length_info
+			WHERE chrom NOT IN ('X', 'Y')
+			ORDER BY CONVERT(chrom, UNSIGNED INTEGER)
+		) a
+		UNION ALL
+		SELECT chromosome FROM hg38_genome_length_info
+		WHERE chrom IN ('X', 'Y')
+	</select>
+	
+	<select id="getPreCalledSV" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.PreFoundedSvVo">
+		SELECT
+			a.sample
+			, src_chrom
+			, src_chrom_start
+			, tar_chrom
+			, tar_chrom_start
+			, sv_type
+			, cluster
+			, orientation
+			, CASE WHEN a.sample LIKE 'SNUCRC%' THEN 0 ELSE 1 END ord
+		FROM D2_SV_List a, (
+			SELECT 
+				DISTINCT b.sv_list_type AS cond 
+			FROM I1_SampleInfoV2 a, I1_SampleGroupInfo b 
+			WHERE a.sample=b.sample_id
+			<if test="samples != null">
+				AND a.table_name IN
+				<foreach item="sample" index="index" collection="samples" open='(' separator=',' close=')' >
+					#{sample.table}
+				</foreach>
+				AND a.sample IN
+				<foreach item="sample" index="index" collection="samples" open='(' separator=',' close=')' >
+					#{sample.sample}
+				</foreach>
+			</if>
+		) b, hg38_genome_length_info c
+		WHERE a.sample = b.cond
+		AND a.src_chrom=c.chromosome
+		<if test="region1 != null">
+			AND src_chrom = #{region1.chrom} AND src_chrom_start <![CDATA[>=]]> #{region1.chromStart} AND src_chrom_start <![CDATA[<=]]> #{region1.chromEnd}
+		</if>
+		<if test="region2 != null">
+			AND tar_chrom = #{region2.chrom} AND tar_chrom_start <![CDATA[>=]]> #{region2.chromStart} AND tar_chrom_start <![CDATA[<=]]> #{region2.chromEnd}
+		</if>
+		ORDER BY ord, sample, c.id, src_chrom_start
+	</select>
+	
+	<select id="getPreCalledSVBak" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.PreFoundedSvVo">
+		SELECT
+			a.sample
+			, src_chrom
+			, src_chrom_start
+			, tar_chrom
+			, tar_chrom_start
+			, sv_type
+			, cluster
+			, orientation
+		FROM D2_SV_List a, (
+			SELECT
+				a.sample
+				, a.nm as cond
+				, CASE WHEN a.sample LIKE 'SNUCRC%' THEN 0 ELSE 1 END ord
+			FROM (
+				SELECT 
+					a.sample
+					, a.study_id 
+					, CASE WHEN sample LIKE 'SNUCRC_%' THEN sample
+					ELSE
+						b.study_name
+					END nm
+				FROM I1_SampleInfoV2 a, I1_StudyInfo b
+				WHERE a.study_id=b.study_id
+				GROUP BY sample, study_id
+			) a LEFT OUTER JOIN (SELECT DISTINCT sample FROM D2_SV_List) b
+			ON a.nm = b.sample
+			WHERE a.sample IN (
+				SELECT sample FROM I1_SampleInfoV2
+				WHERE 1=1
+				<if test="samples != null">
+					AND table_name IN
+					<foreach item="sample" index="index" collection="samples" open='(' separator=',' close=')' >
+						#{sample.table}
+					</foreach>
+					AND sample IN
+					<foreach item="sample" index="index" collection="samples" open='(' separator=',' close=')' >
+						#{sample.sample}
+					</foreach>
+				</if>
+			)
+		) b
+		WHERE a.sample = b.cond
+		<if test="region1 != null">
+			AND src_chrom = #{region1.chrom} AND src_chrom_start <![CDATA[>=]]> #{region1.chromStart} AND src_chrom_start <![CDATA[<=]]> #{region1.chromEnd}
+		</if>
+		<if test="region2 != null">
+			AND tar_chrom = #{region2.chrom} AND tar_chrom_start <![CDATA[>=]]> #{region2.chromStart} AND tar_chrom_start <![CDATA[<=]]> #{region2.chromEnd}
+		</if>
+		ORDER BY ord, sample, src_chrom, src_chrom_start
+	</select>
+	
+	<select id="getPreCalledSVBySampleId" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.PreFoundedSvVo">
+<!-- 		SELECT
+			sample
+			, src_chrom
+			, src_chrom_start
+			, tar_chrom
+			, tar_chrom_start
+			, sv_type
+			, cluster
+			, orientation
+		FROM D2_SV_List
+		WHERE sample IN
+		<foreach item="sample" index="index" collection="sampleIds" open='(' separator=',' close=')' >
+			#{sample}
+		</foreach>
+		ORDER BY sample, src_chrom, src_chrom_start -->
+		
+		SELECT
+			a.sample
+			, src_chrom
+			, src_chrom_start
+			, tar_chrom
+			, tar_chrom_start
+			, sv_type
+			, cluster
+			, orientation
+			, CASE WHEN a.sample LIKE 'SNUCRC%' THEN 0 ELSE 1 END ord
+		FROM D2_SV_List a, (
+			SELECT 
+				DISTINCT b.sv_list_type AS cond 
+			FROM I1_SampleInfoV2 a, I1_SampleGroupInfo b 
+			WHERE a.sample=b.sample_id
+			<if test="sampleIds != null">
+				AND a.sample IN
+				<foreach item="sample" index="index" collection="sampleIds" open='(' separator=',' close=')' >
+					#{sample}
+				</foreach>
+			</if>
+		) b, hg38_genome_length_info c
+		WHERE a.sample = b.cond
+		and a.src_chrom=c.chromosome
+		ORDER BY ord, sample, c.id, src_chrom_start
+	</select>
+	
+	<select id="getSuperEnhancer" parameterType="java.util.List" resultType="org.kobic.hicv2.hic.vo.SuperEnhancerVo">
+		SELECT
+			superenhancer_id							AS id
+			, chrom										AS chr
+ 			, chromStart								AS start
+			, chromEnd									AS end
+ 			, ${beforeBinSize} + CEIL(chromStart / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS startBin
+			, ${beforeBinSize} + CEIL(chromEnd / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS endBin
+			, ${beforeBinSize} + CEIL(chromStart / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS originStartBin
+			, ${beforeBinSize} + CEIL(chromEnd / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS originEndBin
+		FROM D2_SuperEnhancer a, I1_Sample2SuperEnhancer b
+		WHERE a.se_name=b.se_name
+		AND b.sample_name = #{sample_name}
+		AND a.chrom=#{chrom}
+		AND chromStart <![CDATA[>=]]> ${chromStart}
+		AND chromEnd <![CDATA[<=]]> ${chromEnd}
+	</select>
+
+	<select id="getGencodeV34Genes" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.GeneWithBinVo">
+		SELECT
+			seqname		AS chrom
+ 			, start		AS start
+			, end		AS end
+			, name2		AS name
+			, strand	AS strand
+ 			, ${beforeBinSize} + CEIL(start / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS startBin
+			, ${beforeBinSize} + CEIL(end / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS endBin
+			, ${beforeBinSize} + CEIL(start / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS originTxStartBin
+			, ${beforeBinSize} + CEIL(end / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS originTxEndBin
+		FROM I2_Gencode_V34
+		WHERE seqname = #{chrom}
+		AND start <![CDATA[>=]]> ${chromStart} 
+		AND end <![CDATA[<=]]> ${chromEnd}
+		<if test="list != null and list.size != 0">
+			AND name2 IN
+			<foreach collection="list" item="item"  open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<select id="getRefseqHG38Genes" parameterType="java.util.Map" resultType="org.kobic.hicv2.cancerhic.vo.GeneWithBinVo">
+		SELECT
+			chrom			AS chrom
+			, start			AS start
+			, end			AS end
+			, start			AS originTxStart
+			, end			AS originTxEnd
+			, startBin		AS startBin
+			, endBin		AS endBin
+			, originTxStartBin		AS originTxStartBin
+			, originTxEndBin		AS originTxEndBin
+			, name			AS name
+			, MAX(strand)	AS strand
+		FROM (
+			SELECT
+				chrom		AS chrom
+	 			,txStart	AS start
+				, txEnd		AS end
+				, name2		AS name
+				, strand	AS strand
+				, ${beforeBinSize} + CEIL(txStart / ${binResolution}) - CEIL(${chromStart}/${binResolution})		AS startBin
+				, ${beforeBinSize} + CEIL(txEnd / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS endBin
+				, ${beforeBinSize} + CEIL(txStart / ${binResolution}) - CEIL(${chromStart}/${binResolution})		AS originTxStartBin
+				, ${beforeBinSize} + CEIL(txEnd / ${binResolution}) - CEIL(${chromStart}/${binResolution})			AS originTxEndBin
+			FROM I2_Refseq_hg38
+			WHERE chrom = #{chrom}
+			AND txStart <![CDATA[>=]]> ${chromStart} 
+			AND txEnd <![CDATA[<=]]> ${chromEnd}
+			<if test="list != null and list.size != 0">
+			AND name2 IN
+			<foreach collection="list" item="item"  open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		) a
+		GROUP BY chrom, start, end, name
+	</select>
+	
+	<select id="getBlobTest"  resultType="org.kobic.hicv2.cancerhic.vo.TestVo">
+		SELECT intensities AS test FROM Data40k2V2 LIMIT 1
+	</select>
+	
+	<select id="getCharacteristicsSample" parameterType="java.util.Map" resultType="java.util.Map">
+		<choose>
+			<when test="type == null and name == null and property == null">
+				SELECT
+					a.type
+					, COUNT(DISTINCT a.sample_id) AS cnt
+				FROM I1_SampleGroupInfo a, (SELECT DISTINCT sample FROM I1_SampleInfoV2) b
+				WHERE a.sample_id=b.sample
+				AND a.type='Control'
+				GROUP BY a.type
+				
+				UNION ALL
+				
+				SELECT
+					type
+					, COUNT(DISTINCT a.sample_id) AS cnt
+				FROM I1_SampleGroupInfo a, (SELECT DISTINCT sample FROM I1_SampleInfoV2) b
+				WHERE a.sample_id=b.sample
+				AND a.type != 'Control'
+				GROUP BY a.type
+			</when>
+			<otherwise>
+				SELECT 
+					a.${colName}
+					<choose>
+						<when test="type == null and name == null and property == null">
+		    				, COUNT(DISTINCT a.sample_id) AS cnt
+		    			</when>
+		    			<when test="type != null and name == null and property == null">
+		    				, COUNT(DISTINCT a.sample_id) AS cnt
+		    			</when>
+		    			<when test="type != null and name != null and property == null">
+		    				, COUNT(DISTINCT a.sample_id) AS cnt
+		    			</when>
+		    			<when test="type != null and name != null and property != null">
+		    				, COUNT(*) AS cnt
+		    			</when>
+		    		</choose>
+				FROM I1_SampleGroupInfo a, (SELECT DISTINCT sample FROM I1_SampleInfoV2) b
+				WHERE a.sample_id=b.sample
+				<if test="type != null">
+					AND a.type = #{type}
+				</if>
+				<if test="name != null">
+					AND a.name = #{name}
+				</if>
+				<if test="property != null">
+					AND a.property = #{property}
+				</if>
+				GROUP BY a.${colName}
+			</otherwise>
+		</choose>
+
+	</select>
+</mapper>

@@ -1,0 +1,226 @@
+/*====== 공통 START =====*/
+.shadow{ box-shadow: 0 0 29px 0 rgba(18, 66, 101, 0.08);}
+.btn-outline-white{
+	font-family: "Raleway", sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 1px;
+    display: inline-block;
+    padding: 12px 32px;
+    border-radius: 5px;
+    transition: 0.3s;
+    line-height: 1;
+    color: #fff;
+    -webkit-animation-delay: 0.8s;
+    animation-delay: 0.8s;
+    margin-top: 6px;
+    border: 2px solid #fff;
+}
+.btn-outline-white:hover{
+	background: #fff;
+    color: #2487ce;
+    text-decoration: none;
+}
+/*====== 공통 END =====*/
+
+/*====== 메인 START =====*/
+.reference-list h4{
+	font-weight: 700;
+    margin-bottom: 5px;
+    font-size: 18px;
+    color:#2487ce;
+}
+.reference-list p.author{
+	font-size: 15px;
+	padding-left: 20px;
+}
+.reference-list p.journal{
+	padding-left: 20px;
+	 color: #124265;
+}
+/*====== 메인 END =====*/
+
+/*====== contact START =====*/
+.contactpage .info {
+  width: 100%;
+  background: #fff;
+}
+.contactpage .info i {
+  font-size: 20px;
+  color: #2487ce;
+  float: left;
+  width: 33px;
+  height: 30px;
+  background: #e3f0fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 5px;
+  transition: all 0.3s ease-in-out;
+}
+.contactpage .info h4 {
+  padding: 0 0 0 50px;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #124265;
+}
+.contactpage .info h4 span {
+  padding: 0 0 0 10px;
+  margin-bottom: 0;
+  font-size: 16px;
+  color: #217bbc;
+  font-weight: lighter;
+}
+
+/*====== contact END =====*/
+
+.hic .hic-menu { background-color: #f3f9fd; }
+
+.tutorial {
+	padding: 30px 50px;
+	border: 1px solid #ddd;
+	background: #f5f5f5;
+}
+
+.tutorial li:hover {
+	background-color: #e0f4f0;
+	cursor: pointer;
+	-ms-transform: scale(1.03);
+	-webkit-transform: scale(1.03);
+	transform: scale(1.03);
+}
+
+.tutorial-contents span{
+	display: block;
+	line-height: 2rem;
+	font-size: 15px;
+	padding-left: 15px;
+}
+
+.tutorial-contents h5 { color: #124265; font-weight: bold; }
+.tutorial-contents h6 { color: #2487ce; }
+
+.download-img{cursor: pointer; background: url(resources/images/download_black.png) center no-repeat; height:15px; background-size: 13px; width: 20px; margin:0 auto; display: block;}
+.download-img:hover{background: url(resources/images/download_green.png) center no-repeat; height:15px; background-size: 13px;}
+
+
+#colourScaleRange div.ui-slider-range{
+	background: none !important;
+}
+
+.colourScaleRangeCls div.ui-slider-range{
+	background: none !important;
+}
+
+.colorScaleLegend div{
+	font-size: 11px;
+	width: 33.3%;
+	float:left;
+}
+
+
+
+
+
+.colourScaleRangeCls div.ui-slider-range{
+	background: none !important;
+}
+
+.weightScoreLegend div{
+	font-size: 11px;
+	width: 33.3%;
+	float:left;
+}
+
+#scaleTooltip{
+	position: absolute; padding: 5px 10px; background: rgb(255,255,255); border-radius: 10px; color:#000; font-size: 13px; line-height: 20px; border:1px solid gray;
+}
+
+.ColorRangeSliderTooltip{
+	position: absolute; padding: 5px 10px; background: rgb(255,255,255); border-radius: 10px; color:#000; font-size: 13px; line-height: 20px; border:1px solid gray;
+}
+
+
+
+
+
+
+/****************************************
+Context menu
+*****************************************/
+.card-inverse-info {
+	background: rgba(61, 165, 244, 0.2);
+	border: 1px solid #3898e0;
+	color: #2e7db9
+}
+
+
+.context-menu-list {
+	box-shadow: none;
+	border: 1px solid #f3f3f3
+}
+
+.context-menu-list {
+	position: absolute;
+	display: inline-block;
+ 	min-width: 13em;
+	max-width: 26em;
+	padding: .25em 0;
+	margin: .3em;
+	font-family: inherit;
+	font-size: inherit;
+	list-style-type: none;
+	background: #fff;
+	border: 1px solid #bebebe;
+	border-radius: .2em;
+	-webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, .5);
+	box-shadow: 0 2px 5px rgba(0, 0, 0, .5)
+}
+
+.context-menu-item {
+	position: relative;
+ 	padding: 0.5em 1em;
+	width:100%;
+	color: #2f2f2f;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	background-color: #fff;
+	cursor:pointer;
+}
+
+.context-menu-list .context-menu-item.context-menu-hover {
+	background-color: black;
+	color: #fff;
+}
+
+.context-menu-separator {
+	padding: 0;
+	margin: .35em 0;
+	border-bottom: 1px solid #e6e6e6
+}
+
+.dialog-title {
+	user-select: none;
+}
+
+.noselect {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	cursor:default;
+}
+
+#precalled_sv_table tr{cursor:pointer;}
+
+
+
+#precalled_sv_table tbody tr.selected {
+    color: black !important;
+    background-color: green !important;
+}

@@ -1,10 +1,23 @@
 #!/bin/bash
 
-wget https://zenodo.org/record/7559281/files/breast_model.tar.gz
-wget https://zenodo.org/record/7559281/files/brain_model.tar.gz
-wget https://zenodo.org/records/10547043/files/brain_model_1Mb.tar.gz
-wget https://zenodo.org/records/10547765/files/breast_model_1Mb.tar.gz
-tar -xvf breast_model.tar.gz
-tar -xvf brain_model.tar.gz
-tar -xvf brain_model_1Mb.tar.gz
-tar -xvf breast_model_1Mb.tar.gz
+if [[ ! -s breast_model ]];then
+	wget -N https://zenodo.org/records/10544099/files/breast_model.tar.gz
+	tar -xvf breast_model.tar.gz
+fi
+
+if [[ ! -s breast_model_1Mb ]];then
+	wget -N https://zenodo.org/records/11201552/files/breast_model_1Mb.tar.gz
+	tar -xvf breast_model_1Mb.tar.gz
+
+fi
+
+
+if [[ ! -s brain_model ]];then
+	wget -N https://zenodo.org/records/10544099/files/brain_model.tar.gz
+	tar -xvf brain_model.tar.gz
+fi
+
+if [[ ! -s brain_model_1Mb ]];then
+	wget -N https://zenodo.org/records/11201557/files/brain_model_1Mb.tar.gz
+	tar -xvf brain_model_1Mb.tar.gz
+fi

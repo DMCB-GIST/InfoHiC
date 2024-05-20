@@ -1,0 +1,111 @@
+#!/bin/bash
+gpu=$1
+lib=$2
+res=$3
+res_string=`echo $res | awk '{res=$1/1000; print res"kb"}'`
+window=$4
+InfoGenomeR_dir=`readlink -f $5`
+HiC_dir=`readlink -f $6`
+SEED_FILE=$7
+MAX_EPOCH=$8
+NUM_CLASSES=`echo $window | awk -v res=$res '{v=$1-res; print v/res}'`
+
+# GLOBAL RUN OPTIONS ==========================================================
+SCRIPT_PATH=$lib
+TRAIN_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_train
+TRAIN_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_train
+VALID_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_valid
+VALID_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_valid
+train_dir=./training_run_data_${res_string}_ascn_ACGT_rc_shift/
+log=InfoHiC_${res_string}_ascn_dcnn_rc_shift.log
+# Select Test and Validation Chromosomes
+# Test chromosomes will be checked after each epoch
+# or the specified number of chromosomes trained on
+# Validation chromosomes will be hold out entirely
+#test_chromosomes='chr1,chr8'
+#validation_chromosomes='chr13,chr12'
+
+# Settings ===================================================================
+report_every='20'   # how often to report training loss every X steps
+num_classes=$NUM_CLASSES  # number of classes (output vector entries), 201 for 5kb models
+# 101 for 10 kb models
+bp_context=$window  # bp context processed (1 Mb + 1x bin_size)
+
+keep_prob_inner='0.8'  # keep probability (1-dropout rate for first conv module)
+
+learning_rate='0.0001'  # initial learning rate
+epsilon='0.1'  # ADAM epsilon
+l2_strength='0.001'
+batch_size='1'  # usually restricted to 1 for memory
+
+# specifications for first conv. module
+# if using seeding / transfer learning must have the same or
+# bigger dimensions then  then the architecture of the first phase model
+# below are the default values for the provided first phase trained network
+# the last conv. layers needs to be the same dimension as the dilation units
+conv_layers='6'  # number of conv. layers in first module
+hidden_units_scheme='300,600,600,900,900,100'
+kernel_width_scheme='8,8,8,4,4,1'
+max_pool_scheme='4,5,5,5,2,1'
+# specifications for dilated conv. module
+# dilation scheme should be chosen so that the model reaches the full sequence context
+dilation_scheme='2,4,8,16,32,64,128,256,1'  # dilation rates
+dilation_units='100'  # dilation units/filters throughout
+dilation_width='3'
+dilation_residual=True  # if to use residual connections in the dil layers
+dilation_residual_dense=True
+
+# Transfer learning settings
+seed_weights=True  # use seeding /transfer learning at all
+seed_scheme='1,1,1,1,1,0'  # specify which layers to seed (1: seed, 0: not seed)
+seed_file=$SEED_FILE
+# Other
+shuffle=True
+store_dtype='uint16'  # how to store the sequence
+hap1=$InfoGenomeR_dir\/hap1.fa
+hap2=$InfoGenomeR_dir\/hap2.fa
+ascn_file=$InfoGenomeR_dir\/ascn_file
+# if multiple GPUs present select a single one to run training on
+# and not block the remaining
+GPU=$gpu
+# Run =========================================================================
+
+
+max_epoch=$MAX_EPOCH
+
+python ${SCRIPT_PATH}/InfoHiC_training.py \
+	--log ${log} \
+        --train_data_file ${TRAIN_DATA_FILE} \
+	--valid_data_file ${VALID_DATA_FILE} \
+        --train_data_file_rc ${TRAIN_DATA_FILE_RC} \
+        --valid_data_file_rc ${VALID_DATA_FILE_RC} \
+        --train_dir ${train_dir} \
+        --report_every ${report_every} \
+        --num_classes ${num_classes} \
+        --bp_context ${bp_context} \
+        --learning_rate ${learning_rate} \
+        --l2_strength ${l2_strength} \
+        --max_epoch ${max_epoch} \
+        --keep_prob_inner ${keep_prob_inner} \
+        --batch_size ${batch_size} \
+        --conv_layers ${conv_layers} \
+        --hidden_units_scheme ${hidden_units_scheme} \
+        --kernel_width_scheme ${kernel_width_scheme} \
+        --max_pool_scheme ${max_pool_scheme} \
+        --dilation_scheme ${dilation_scheme} \
+        --dilation_units ${dilation_units} \
+        --dilation_width ${dilation_width} \
+        --dilation_residual=${dilation_residual} \
+        --dilation_residual_dense=${dilation_residual_dense} \
+        --epsilon ${epsilon} \
+        --seed_weights=${seed_weights} \
+        --seed_scheme ${seed_scheme} \
+        --seed_file ${seed_file} \
+        --store_dtype ${store_dtype} \
+        --hap1 ${hap1} \
+        --hap2 ${hap2} \
+        --ascn_file ${ascn_file} \
+        --gpu ${GPU} \
+#	--model "./best_checkpoint-##" \
+#	--reload_model 'True'
+

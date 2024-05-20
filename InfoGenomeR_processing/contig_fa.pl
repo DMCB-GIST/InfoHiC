@@ -4,6 +4,8 @@ use warnings;
 use strict;
 my $nf;
 my @fa;
+`rm -rf $ARGV[0].index`;
+`rm -rf $ARGV[1].index`;
 $fa[0]=  Bio::DB::Fasta->new($ARGV[0]);
 $fa[1]=  Bio::DB::Fasta->new($ARGV[1]);
 my @db_chr = $fa[0]->get_all_primary_ids;
