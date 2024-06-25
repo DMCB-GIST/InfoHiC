@@ -103,16 +103,16 @@ InfoGenomeR_output=`readlink -f ${workspace_dir}/InfoGenomeR_output`
 # go to the InfoHiC repo directory
 cd ${InfoHiC_repo}
 
-# make the root output directory
-root_dir=InfoHiC_prediction_output
-mkdir -p ${root_dir}
+# make a workspace directory
+workspace_dir=InfoHiC_workspace1
+mkdir -p ${workspace_dir}
 
-# Link the reference and the InfoHiC model in the root directory
-ln -s ${PWD}/humandb/ref ${root_dir}/ref
-ln -s ${PWD}/models/breast_model ${root_dir}/model
+# Link the reference and the InfoHiC model in the workspace
+ln -s ${PWD}/humandb/ref ${workspace_dir}/ref
+ln -s ${PWD}/models/breast_model ${workspace_dir}/model
 
 # take the InfoGenomeR output 
-cp -r ${InfoGenomeR_output} ${root_dir}/InfoGenomeR_output
+cp -r ${InfoGenomeR_output} ${workspace_dir}/InfoGenomeR_output
 ```
 #### InfoHiC run
 ```
@@ -124,10 +124,10 @@ model=CSCN_encoding
 gpu=1 # use the available gpu
 
 # run the InfoHiC workflow
-snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
+snakemake --cores all --use-conda ${workspace_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
 
 # run the post process
-snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
+snakemake --cores all --use-conda ${workspace_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
 
 ```
 
@@ -141,16 +141,16 @@ snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolutio
 # go to the InfoHiC base directory
 cd InfoHiC
 
-# make the root output directory
-root_dir=InfoHiC_prediction_output
-mkdir -p ${root_dir}
+# make a workspace directory
+workspace_dir=InfoHiC_workspace2
+mkdir -p ${workspace_dir}
 
 # Link the reference and the InfoHiC model in the root directory
-ln -s ${PWD}/humandb/ref ${root_dir}/ref
-ln -s ${PWD}/models/breast_model ${root_dir}/model
+ln -s ${PWD}/humandb/ref ${workspace_dir}/ref
+ln -s ${PWD}/models/breast_model ${workspace_dir}/model
 
 # take the InfoGenomeR output example
-cp -r examples/T47D_chromosomes_8_14/InfoGenomeR_output ${root_dir}/InfoGenomeR_output
+cp -r examples/T47D_chromosomes_8_14/InfoGenomeR_output ${workspace_dir}/InfoGenomeR_output
 
 # set wildcards 
 resolution=40000
@@ -160,10 +160,10 @@ model=CSCN_encoding
 gpu=1 # use the available gpu
 
 # run the InfoHiC workflow
-snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
+snakemake --cores all --use-conda ${workspace_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
 
 # run the post process
-snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
+snakemake --cores all --use-conda ${workspace_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
 
 ```
 # InfoHiC training
