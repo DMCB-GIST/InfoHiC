@@ -328,4 +328,3 @@ InfoHiC_training_output/InfoHiC_training.BRCA/hic_40000.window_1040000.split1_ra
 ```
 Make a link to the model output in a InfoHiC workspace when running InfoHiC.
 
-
