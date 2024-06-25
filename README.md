@@ -58,8 +58,22 @@ snakemake --cores all --use-conda InfoHiC_download
 - Else, test with low coverage WGS fastqs we provide first to obtain InfoGenomeR output. Then replace fastqs with yours.
 - Details are here https://github.com/dmcblab/InfoGenomeR
 ### Inputs
+The inputs should be structured like below
 - InfoHiC trained model
+```
+model/
+├── contig_model.data-00000-of-00001
+├── contig_model.index
+└── contig_model.meta
+```
 - WGS fastqs
+```
+fastq/
+├── normal1.fq.gz
+├── normal2.fq.gz
+├── tumor1.fq.gz
+└── tumor2.fq.gz
+```
 ### workflow
 #### InfoGenomeR workspace setting
 ```
