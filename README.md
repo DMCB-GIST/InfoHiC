@@ -56,11 +56,12 @@ snakemake --cores all --use-conda InfoHiC_download
 ## Starting from WGS fastq
 - If you already have InfoGenomeR output, go to [Starting from InfoGenomeR output](#starting-from-infogenomer-output)
 - Else, test with low coverage WGS fastqs we provide first to obtain InfoGenomeR output. Then replace fastqs with yours.
-- Details are here (https://github.com/dmcblab/InfoGenomeR)
+- Details are here https://github.com/dmcblab/InfoGenomeR
 ### Inputs
 - InfoHiC trained model
 - WGS fastqs
 ### workflow
+#### InfoGenomeR workspace setting
 ```
 cd $HOME
 
@@ -88,13 +89,17 @@ ln -s ${PWD}/humandb/ref ${workspace_dir}/ref
 
 # use low coverage examples data
 ln -s ${PWD}/examples/fastq ${workspace_dir}/fastq
-
+```
+#### InfoGenomeR run
+```
 # Run the InfoGenomeR workflow. Select either somatic or total mode.
 snakemake --core all --use-conda ${workspace_dir}/InfoGenomeR_output --config mode=somatic min_ploidy=2.5 max_ploidy=3.5
 
 # This is InfoGenomeR output
-InfoGenomeR_output=`readlink -f ${workspace_dir}/InfoGenomeR_output`;
-
+InfoGenomeR_output=`readlink -f ${workspace_dir}/InfoGenomeR_output`
+```
+#### InfoHiC workspace setting
+```
 # go to the InfoHiC repo directory
 cd ${InfoHiC_repo}
 
@@ -108,7 +113,9 @@ ln -s ${PWD}/models/breast_model ${root_dir}/model
 
 # take the InfoGenomeR output 
 cp -r ${InfoGenomeR_output} ${root_dir}/InfoGenomeR_output
-
+```
+#### InfoHiC run
+```
 # set wildcards 
 resolution=40000
 window=2000000
