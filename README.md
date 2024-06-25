@@ -204,7 +204,7 @@ $InfoHiC_workspace1/InfoHiC_prediction/hic_40000.window_2000000.BRCA.CSCN_encodi
         - Visualization of contig Hi-C matrix, with neo-TAD, neo-loop, ens_gene, super_enhancer, and typical_enhancer annotations
 
 <p align="center">
-    <img width="1500" src="https://github.com/DMCB-GIST/InfoHiC/blob/main/doc/hic_iced.pdf">
+    <img width="1500" src="https://github.com/DMCB-GIST/InfoHiC/blob/main/doc/hic_iced.png">
   </a>
 </p>
 
