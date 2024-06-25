@@ -147,7 +147,7 @@ snakemake --cores all --use-conda ${workspace_dir}/InfoHiC_prediction/hic_${reso
 ```
 ### Outputs
 ```
-$InfoHiC_workspace1/InfoHiC_prediction/hic_40000.window_2000000.BRCA.CSCN_encoding.gpu1.post_process
+InfoHiC_workspace1/InfoHiC_prediction/hic_40000.window_2000000.BRCA.CSCN_encoding.gpu1.post_process
 └── euler.8.14
     ├── contig1.30385446.43357567
     │   ├── contigs_ref_coor.tsv
@@ -179,7 +179,7 @@ $InfoHiC_workspace1/InfoHiC_prediction/hic_40000.window_2000000.BRCA.CSCN_encodi
 ```
 - the post_process output folder contains chromosome sets where InfoHiC performed SV Hi-C prediction.
     - euler.8.14 indicates chromosomes 8 and 14
-- Each euler.* directory contains SV contigs
+- Each euler directory contains SV contigs
     - contig2.58095296.66230780 indicates contig index, contig coordinate start, and contig coordinate end in a prediction window.
 - Each contig folder contains predicted Hi-C information
     - contigs.tsv
@@ -297,7 +297,10 @@ epoch=1
 snakemake --cores all --use-conda ${root_dir}/InfoHiC_training.${cancer_type}/hic_${resolution}.window_${window}.split${split_idx}_rate${split_rate}/${mode}/gpu${gpu}.epoch${epoch}
 ```
 
-# Export an InfoHiC model
+Then, go to [Export an InfoHiC model](#export-an-infohic-model)
+
+
+## Export an InfoHiC model
 - After training, select a model and export it
 ``` 
 
@@ -316,5 +319,12 @@ cp -r $model.meta ${model_dir}/best_checkpoint.meta
 # export it as a contig model finally
 snakemake --cores all --use-conda ${model_dir}.model
 ```
-
+### outputs
+```
+InfoHiC_training_output/InfoHiC_training.BRCA/hic_40000.window_1040000.split1_rate0.1/CSCN_encoding/gpu1.epoch1.model
+├── contig_model.data-00000-of-00001
+├── contig_model.index
+└── contig_model.meta
+```
+Make a link to the model output in a InfoHiC workspace when running InfoHiC.
 
