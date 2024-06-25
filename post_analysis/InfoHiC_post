@@ -63,7 +63,9 @@ window=contigs.bed.sv_window
 cd $InfoHiC_output\/karyotypes
 while read -r -a l;do
 	cd ${l[0]}
-	Rscript ${InfoHiC_lib}/post_analysis/index_ref_coor.R
+	if [ -s contigs.bed.sv_window ];then
+		Rscript ${InfoHiC_lib}/post_analysis/index_ref_coor.R
+	fi
 	if [ -s "ref.sv_window" ] && [[ $true_matrix != "" ]];then
 		s=`echo ${l[0]} | awk '{n=split($1,f,"."); for(i=2;i<=n;i++){printf "%s\t", f[i];}; printf "\n";}'`
 		${InfoHiC_lib}/post_analysis/true_format.sh "$s" $cis_path $trans_path  
