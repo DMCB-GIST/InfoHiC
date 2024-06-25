@@ -300,7 +300,7 @@ snakemake --cores all --use-conda ${root_dir}/InfoHiC_training.${cancer_type}/hi
 Then, go to [Export an InfoHiC model](#export-an-infohic-model)
 
 
-# Export an InfoHiC model
+## Export an InfoHiC model
 - After training, select a model and export it
 ``` 
 
