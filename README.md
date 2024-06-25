@@ -61,14 +61,15 @@ snakemake --cores all --use-conda InfoHiC_download
 The inputs should be structured like below
 - InfoHiC trained model
 ```
-model/
+model
 ├── contig_model.data-00000-of-00001
 ├── contig_model.index
 └── contig_model.meta
 ```
 - WGS fastqs
+  - normal fastq files are optional for somatic mode
 ```
-fastq/
+fastq
 ├── normal1.fq.gz
 ├── normal2.fq.gz
 ├── tumor1.fq.gz
@@ -144,6 +145,70 @@ snakemake --cores all --use-conda ${workspace_dir}/InfoHiC_prediction/hic_${reso
 snakemake --cores all --use-conda ${workspace_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
 
 ```
+### Outputs
+```
+$InfoHiC_workspace1/InfoHiC_prediction/hic_40000.window_2000000.BRCA.CSCN_encoding.gpu1.post_process
+└── euler.8.14
+    ├── contig1.30385446.43357567
+    │   ├── contigs_ref_coor.tsv
+    │   ├── contigs.tsv
+    │   ├── ens_gene.bed
+    │   ├── hic_iced_loop.bed
+    │   ├── hic_iced.matrix
+    │   ├── hic_iced.pdf
+    │   ├── hic_iced_tad.bed
+    │   ├── hic.matrix
+    │   ├── hic.pdf
+    │   ├── hic_tad.bed
+    │   ├── super_enhancer.bed
+    │   └── typical_enhancer.bed
+    ├── contig2.58095296.66230780
+    │   ├── contigs_ref_coor.tsv
+    │   ├── contigs.tsv
+    │   ├── ens_gene.bed
+    │   ├── hic_iced_loop.bed
+    │   ├── hic_iced.matrix
+    │   ├── hic_iced.pdf
+    │   ├── hic_iced_tad.bed
+    │   ├── hic.matrix
+    │   ├── hic.pdf
+    │   ├── hic_tad.bed
+    │   ├── super_enhancer.bed
+    │   └── typical_enhancer.bed
+    ......
+```
+- the post_process output folder contains chromosome sets where InfoHiC performed SV Hi-C prediction.
+    - euler.8.14 indicates chromosomes 8 and 14
+- Each euler.* directory contains SV contigs
+    - contig2.58095296.66230780 indicates contig index, contig coordinate start, and contig coordinate end in a prediction window.
+- Each contig folder contains predicted Hi-C information
+    - contigs.tsv
+        - full contig information of the contig 
+        - contig index, breakpoint graph node index1, breakpoint graph node index2, ref chrom, ref pos, ref end, cumulative length
+    - contigs_ref_coor.tsv
+        - the current SV prediction window in the contig 
+        - ref chrom, ref pos, ref end, ref orientation, contig index, contig pos, contig end, contig orientation
+    - ens_gene.bed
+        - Ensembl gene location in the config
+    - super_enhancer.bed
+        - SE location in the config
+    - typical_enhancer.bed
+        - TE location in the contig 
+    - hic_iced_loop.bed
+        - neo-loop location in the iced contig
+    - hic_iced.matrix
+        - prediction results with post iced normalization
+    - hic_iced_tad.bed
+        - noe-TAD location in the iced contig. The forth column indicates a TAD level from spectralTAD.
+    - hic_iced.pdf
+        - Visualization of contig Hi-C matrix, with neo-TAD, neo-loop, ens_gene, super_enhancer, and typical_enhancer annotations
+
+<p align="center">
+    <img width="1500" src="https://github.com/DMCB-GIST/InfoHiC/blob/main/doc/hic_iced.pdf">
+  </a>
+</p>
+
+
 
 
 ## Starting from InfoGenomeR output
@@ -251,4 +316,5 @@ cp -r $model.meta ${model_dir}/best_checkpoint.meta
 # export it as a contig model finally
 snakemake --cores all --use-conda ${model_dir}.model
 ```
+
 
