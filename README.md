@@ -29,22 +29,142 @@ mamba create -c conda-forge -c bioconda -n snakemake snakemake
 conda config --set channel_priority strict
 conda activate snakemake
 ```
+# InfoHiC repository
+```
+git clone https://github.com/DMCB-GIST/InfoHiC.git
+InfoHiC_repo=${PWD}/InfoHiC
+cd ${InfoHiC_repo}
+```
+After git clone, follow the steps below.
+- [Conda environment setting](#conda-environment-setting)
+- [Dataset download](#dataset-download)
+- [InfoHiC prediction](#infohic-prediction)
 
-# dataset download
-```
-snakemake --cores all --use-conda InfoHiC_download
-```
-# conda environment setting
+
+# Conda environment setting
 ```
 snakemake --core all --use-conda hic_mapping_env
 snakemake --core all --use-conda InfoHiC_env
 ```
+# Dataset download
+```
+snakemake --cores all --use-conda InfoHiC_download
+```
 
+# InfoHiC prediction
+- Hi-C matrices are predicted using the InfoHiC model.
+## Starting from WGS fastq
+- If you already have InfoGenomeR output, go to [Starting from InfoGenomeR output](#starting-from-infogenomer-output)
+- Else, test with low coverage WGS fastqs we provide first to obtain InfoGenomeR output. Then replace fastqs with yours.
+- Details are here (https://github.com/dmcblab/InfoGenomeR)
+### Inputs
+- InfoHiC trained model
+- WGS fastqs
+### workflow
+```
+cd $HOME
+
+#InfoGenomeR repository
+git clone https://github.com/dmcblab/InfoGenomeR.git
+InfoGenomeR_repo=${PWD}/InfoGenomeR
+cd ${InfoGenomeR_repo}
+
+#environment setting
+snakemake --core all --use-conda InfoGenomeR_env
+
+#dataset download
+snakemake --cores all --use-conda InfoGenomeR_download
+
+#example dataset download
+snakemake --core all --use-conda InfoGenomeR_example_download
+
+# make a workspace directory
+cd ${InfoGenomeR_repo}
+workspace_dir=InfoGenomeR_workspace1
+mkdir -p ${workspace_dir}
+
+# link the reference in the workspace directory
+ln -s ${PWD}/humandb/ref ${workspace_dir}/ref
+
+# use low coverage examples data
+ln -s ${PWD}/examples/fastq ${workspace_dir}/fastq
+
+# Run the InfoGenomeR workflow. Select either somatic or total mode.
+snakemake --core all --use-conda ${workspace_dir}/InfoGenomeR_output --config mode=somatic min_ploidy=2.5 max_ploidy=3.5
+
+# This is InfoGenomeR output
+InfoGenomeR_output=`readlink -f ${workspace_dir}/InfoGenomeR_output`;
+
+# go to the InfoHiC repo directory
+cd ${InfoHiC_repo}
+
+# make the root output directory
+root_dir=InfoHiC_prediction_output
+mkdir -p ${root_dir}
+
+# Link the reference and the InfoHiC model in the root directory
+ln -s ${PWD}/humandb/ref ${root_dir}/ref
+ln -s ${PWD}/models/breast_model ${root_dir}/model
+
+# take the InfoGenomeR output 
+cp -r ${InfoGenomeR_output} ${root_dir}/InfoGenomeR_output
+
+# set wildcards 
+resolution=40000
+window=2000000
+cancer_type=BRCA
+model=CSCN_encoding
+gpu=1 # use the available gpu
+
+# run the InfoHiC workflow
+snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
+
+# run the post process
+snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
+
+```
+
+
+## Starting from InfoGenomeR output
+### Inputs
+- InfoHiC trained model
+- InfoGenomeR output from WGS (https://github.com/dmcblab/InfoGenomeR)
+### Workflow
+```
+# go to the InfoHiC base directory
+cd InfoHiC
+
+# make the root output directory
+root_dir=InfoHiC_prediction_output
+mkdir -p ${root_dir}
+
+# Link the reference and the InfoHiC model in the root directory
+ln -s ${PWD}/humandb/ref ${root_dir}/ref
+ln -s ${PWD}/models/breast_model ${root_dir}/model
+
+# take the InfoGenomeR output example
+cp -r examples/T47D_chromosomes_8_14/InfoGenomeR_output ${root_dir}/InfoGenomeR_output
+
+# set wildcards 
+resolution=40000
+window=2000000
+cancer_type=BRCA
+model=CSCN_encoding
+gpu=1 # use the available gpu
+
+# run the InfoHiC workflow
+snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
+
+# run the post process
+snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
+
+```
 # InfoHiC training
 - The training step can be skipped because we provide InfoHiC trained models.
 - It takes two weeks to train on 1 Mb windows (~10 epoches).
 - On 2 Mb windows, it takes a month.
 - Take the one-day example on 1 Mb windows using the subset of T47D Hi-C reads.
+
 ## Starting from InfoGenomeR output
 ### Inputs
 - InfoGenomeR output from WGS (https://github.com/dmcblab/InfoGenomeR)
@@ -111,40 +231,3 @@ cp -r $model.meta ${model_dir}/best_checkpoint.meta
 snakemake --cores all --use-conda ${model_dir}.model
 ```
 
-# InfoHiC prediction
-- Hi-C matrices are predicted using the InfoHiC model.
-## Starting from InfoGenomeR output
-### Inputs
-- InfoHiC trained model
-- InfoGenomeR output from WGS (https://github.com/dmcblab/InfoGenomeR)
-### Workflow
-```
-# go to the InfoHiC base directory
-cd InfoHiC
-
-# make the root output directory
-root_dir=InfoHiC_prediction_output
-mkdir -p ${root_dir}
-
-# Link the reference and the InfoHiC model in the root directory
-ln -s ${PWD}/humandb/ref ${root_dir}/ref
-ln -s ${PWD}/models/breast_model ${root_dir}/model
-
-# take the InfoGenomeR output example
-cp -r examples/T47D_chromosomes_8_14/InfoGenomeR_output ${root_dir}/InfoGenomeR_output
-
-# set wildcards 
-resolution=40000
-window=2000000
-cancer_type=BRCA
-model=CSCN_encoding
-gpu=1 # use the available gpu
-
-# run the InfoHiC workflow
-snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}
-
-# run the post process
-snakemake --cores all --use-conda ${root_dir}/InfoHiC_prediction/hic_${resolution}.window_${window}.${cancer_type}.${model}.gpu${gpu}.post_process
-
-
-```
