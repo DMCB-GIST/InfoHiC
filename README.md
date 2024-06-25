@@ -319,5 +319,12 @@ cp -r $model.meta ${model_dir}/best_checkpoint.meta
 # export it as a contig model finally
 snakemake --cores all --use-conda ${model_dir}.model
 ```
+### outputs
+```
+InfoHiC_training_output/InfoHiC_training.BRCA/hic_40000.window_1040000.split1_rate0.1/CSCN_encoding/gpu1.epoch1.model
+├── contig_model.data-00000-of-00001
+├── contig_model.index
+└── contig_model.meta
+```
 
 
