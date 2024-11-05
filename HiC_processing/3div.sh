@@ -35,9 +35,12 @@ pids[1]=$!;
 wait ${pids[0]}
 wait ${pids[1]}
 
+rm 1.sam 2.sam
+
 
 python2 $dir\/hic_pipeline/bin/make_paired_sam.py 1.filtered.sam 2.filtered.sam  | samtools view -Sb -t $ref.fai -o merged.bam
 
+rm 1.filtered.sam 2.filtered.sam
 
 
 samtools view  -S merged.bam | python2 $dir\/hic_pipeline/bin/filter_self_reads_stdin.py | samtools view -Sb -t $ref.fai  -o filtered.merged.bam

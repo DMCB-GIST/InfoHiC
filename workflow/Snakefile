@@ -81,13 +81,14 @@ rule InfoHiC_training:
         input:  
                 hic_split_input=rules.hic_split.output.hic_split_output,
                 infogenomer_processing_input=rules.InfoGenomeR_processing.output.infogenomer_processing_output,
-                seed_file="{root}/seed_file/saved_conv_weights_dhw_5layer_1k_pool.npz"
+                seed_file="{root}/seed_file/saved_conv_weights_dhw_5layer_1k_pool.npz",
+                ref="{root}/ref/ucsc.hg19.fasta"
         output: 
                 InfoHiC_training_output=directory("{root}/InfoHiC_training.{cancer_type}/hic_{resolution}.window_{window}.split{split_idx}_rate{split_rate}/{mode}/gpu{gpu}.epoch{epoch}")
         conda:  
                 "envs/InfoHiC.yaml"
         shell:  
-                "workflow/scripts/InfoHiC_training.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.infogenomer_processing_input} {input.hic_split_input} {input.seed_file} {wildcards.epoch} {output.InfoHiC_training_output}"
+                "workflow/scripts/InfoHiC_training.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.infogenomer_processing_input} {input.hic_split_input} {input.seed_file} {wildcards.epoch} {output.InfoHiC_training_output} {input.ref}"
 
 
 rule InfoHiC_model_save:

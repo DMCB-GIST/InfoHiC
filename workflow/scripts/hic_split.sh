@@ -30,7 +30,9 @@ Rscript $dir\/set.R 4000000 $window $resolution $chrom_size
 
 # gap (NNN) region filter
 for m in test train valid sv;do
-	python $dir\/gap_filter.py $m\_set $ref  > $m\_set.filtered &
+	if [[ -s $m\_set ]];then
+		python $dir\/gap_filter.py $m\_set $ref  > $m\_set.filtered &
+	fi
 done
 wait;
 
@@ -52,12 +54,16 @@ $dir\/bed.sh $kb_res $shift_res
 cd ../
 
 for s in sv train test valid;do
-	cp chr_matrix_format_rc/$kb_res.bed.f.for_$s $kb_res.bed.f.for_$s
-	cp chr_matrix_format_rc/$kb_res.bed.rc.for_$s $kb_res.bed.rc.for_$s
-	cp chr_matrix_format_rc_shift/$kb_res.bed.f.for_$s $kb_res.bed.f.for_$s.shift
-	cp chr_matrix_format_rc_shift/$kb_res.bed.rc.for_$s $kb_res.bed.rc.for_$s.shift
+	if [[ -s chr_matrix_format_rc/$kb_res.bed.f.for_$s ]];then
+		cp chr_matrix_format_rc/$kb_res.bed.f.for_$s $kb_res.bed.f.for_$s
+		cp chr_matrix_format_rc/$kb_res.bed.rc.for_$s $kb_res.bed.rc.for_$s
+		cp chr_matrix_format_rc_shift/$kb_res.bed.f.for_$s $kb_res.bed.f.for_$s.shift
+		cp chr_matrix_format_rc_shift/$kb_res.bed.rc.for_$s $kb_res.bed.rc.for_$s.shift
+	fi
 done
 
-Rscript $dir\/sv_bed.R $kb_res
+if [[ -s $kb_res.f.for_sv ]];then
+	Rscript $dir\/sv_bed.R $kb_res
+fi
 
 echo "split done"
