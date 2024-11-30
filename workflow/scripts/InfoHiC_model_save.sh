@@ -16,7 +16,11 @@ export FRAC=0.9
 
 gpu=$1
 mode=$2
-lib=${LIB}\/InfoHiC_tensorflow/$mode\/contigs
+if [[ $mode == "OHN" ]];then
+	lib=${LIB}\/InfoHiC_tensorflow/OHN_ref/contigs
+else
+	lib=${LIB}\/InfoHiC_tensorflow/${mode}/contigs
+fi
 res=$3
 window=$4
 SEED_FILE=`readlink -f $5`

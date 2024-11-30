@@ -10,6 +10,7 @@ id="sample1"
 gpu=0
 out_dir=contig_out
 window=2Mb
+resolution=40000
 if [[ -z "$FRAC" ]];then
 	export FRAC=0.9
 fi
@@ -24,6 +25,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -w|--window)
       window="$2"
+      shift
+      shift
+      ;;
+    -r|--resolution)
+      resolution="$2"
       shift
       shift
       ;;
@@ -42,6 +48,7 @@ while [[ $# -gt 0 ]]; do
       echo -e "Options:"
       echo -e  "\t-m, --mode (required)\n \t\t Select the mode (CSCN_encoding, CSCN_decoding)
 \t-w, --window (required) \n \t\t window size (1Mb, 2Mb)
+\t-r, --resolution (required) \n \t\t resolution (10kb, 40kb)
 \t-g, --gpu (required) \n \t\t gpu index (default: 0)
 \t-c, --checkpoint (required) \n \t\t trained model checkpoint
 
@@ -73,8 +80,11 @@ if [[ $mode == "CSCN_encoding" ]];then
 	code=$InfoHiC_lib\/InfoHiC_tensorflow/CSCN_encoding/contigs/InfoHiC_test_contig.py
 elif [[ $mode == "CSCN_decoding" ]];then
         code=$InfoHiC_lib\/InfoHiC_tensorflow/CSCN_decoding/contigs/InfoHiC_test_contig.py
+elif [[ $mode == "OHN" ]];then
+	## decoding share
+	code=$InfoHiC_lib\/InfoHiC_tensorflow/CSCN_decoding/contigs/InfoHiC_test_contig.py
 else
-	echo "select a mode"
+	echo "select a mode (OHN, CSCN_encoding, or CSCN_decoding)"
 	exit 1
 fi
 checkpoint=`readlink -f "$checkpoint"`
@@ -89,10 +99,17 @@ if [[ $window == "2Mb" ]];then
 	bp_context=2000000
 	num_classes=49
 elif [[ $window == "1Mb" ]];then
-        bp_context=1040000
-        num_classes=25
+	if [[ $resolution == "40000" ]];then
+                bp_context=1040000
+                num_classes=25
+        else
+		# 10000
+		bp_context=1020000
+		num_classes=101
+	fi
 else
 	echo "select a window size (1Mb, 2Mb)"
+	echo "select a resolution (10kb, 40kb)"
 	exit 1
 fi
 
@@ -105,8 +122,8 @@ cd $InfoGenomeR_output\/karyotypes
 while read -r -a line;do
         cd ${line[0]}
         if [[ -s contigs.bed.sv_window ]];then
-		python $code --input contigs.bed.sv_window --out_dir $out_dir --name_tag $id --model $checkpoint --genome ./contigs.fa --bp_context $bp_context --add_window 40000 --num_classes $num_classes --bin_size 40000 --run_on gpu --gpu $gpu --padd_ends both --cn_file ./contigs.cn_file
-		python $code --input contigs.bed.sv_window --out_dir $out_dir\_rc --name_tag $id --model $checkpoint --genome ./contigs.fa --bp_context $bp_context --add_window 40000 --num_classes $num_classes --bin_size 40000 --run_on gpu --gpu $gpu --padd_ends both --cn_file ./contigs.cn_file --rc_tag True
+		python $code --input contigs.bed.sv_window --out_dir $out_dir --name_tag $id --model $checkpoint --genome ./contigs.fa --bp_context $bp_context --add_window $resolution --num_classes $num_classes --bin_size $resolution --run_on gpu --gpu $gpu --padd_ends both --cn_file ./contigs.cn_file
+		python $code --input contigs.bed.sv_window --out_dir $out_dir\_rc --name_tag $id --model $checkpoint --genome ./contigs.fa --bp_context $bp_context --add_window $resolution --num_classes $num_classes --bin_size $resolution --run_on gpu --gpu $gpu --padd_ends both --cn_file ./contigs.cn_file --rc_tag True
 	fi
 	cd ../
 done < euler.list

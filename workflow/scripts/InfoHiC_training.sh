@@ -16,18 +16,22 @@ export FRAC=0.9
 
 gpu=$1
 mode=$2
-lib=${LIB}\/InfoHiC_tensorflow/$2\/two_haplotypes
+if [[ $mode == "OHN" ]];then
+	lib=${LIB}\/InfoHiC_tensorflow/OHN_ref
+else
+	lib=${LIB}\/InfoHiC_tensorflow/${mode}/two_haplotypes
+fi
 res=$3
 window=$4
 InfoGenomeR_dir=`readlink -f $5`
 HiC_dir=`readlink -f $6`
 SEED_FILE=`readlink -f $7`
 MAX_EPOCH=$8
-OUTPUT=$9
-
+REF=`readlink -f $9`
+OUTPUT=${10}
 
 mkdir -p $OUTPUT
 cd $OUTPUT
 
 
-InfoHiC_training $gpu $lib $res $window  $InfoGenomeR_dir $HiC_dir $SEED_FILE $MAX_EPOCH
+InfoHiC_training $gpu $lib $res $window  $InfoGenomeR_dir $HiC_dir $SEED_FILE $MAX_EPOCH $REF

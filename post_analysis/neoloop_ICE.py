@@ -18,12 +18,13 @@ import time
 fr=[]
 fc=[]
 fv=[]
+res=int(sys.argv[2])
 with open(sys.argv[1]+".output.m.format.v", "r") as f:
     for i,l in enumerate(f):
         l = l.rstrip()
         l = l.split("\t")
-        fr.append(int(int(l[1])/40000))
-        fc.append(int(int(l[3])/40000))
+        fr.append(int(int(l[1])/res))
+        fc.append(int(int(l[3])/res))
         fv.append(l[4])
 
 
@@ -44,7 +45,7 @@ with open(sys.argv[1]+".index.sv","r") as f:
     for i,l in enumerate(f):
         l = l.rstrip()
         l = l.split("\t")
-        chain.append(int(int(l[1])/40000)-minv)
+        chain.append(int(int(l[1])/res)-minv)
 
 
 def chain_idx(ci, chain):
@@ -59,10 +60,13 @@ chains=dict(gen)
 
 from neoloop.callers import Peakachu
 protocol="dilution"
-res=40000
 
+if res!= 40000:
+    protocol="insitu"
 
-m=m/4000
+res_adjust=res/10
+
+m=m/res_adjust
 
 core = Peakachu(m, lower=100000, upper=3000000, res=res, protocol=protocol)
 prob=0.95
@@ -73,5 +77,5 @@ nopool=False
 loop_index = core.predict(thre=prob, no_pool=nopool, min_count=mmp, index_map=index_map,chains=chains)
 for i in range(0, len(loop_index)):
 #	if chains[loop_index[i][0]] != chains[loop_index[i][1]]:
-	print("{}\t{}".format((loop_index[i][0]+minv)*40000, (loop_index[i][1]+minv)*40000))
+	print("{}\t{}".format((loop_index[i][0]+minv)*res, (loop_index[i][1]+minv)*res))
 

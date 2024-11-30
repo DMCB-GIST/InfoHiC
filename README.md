@@ -91,9 +91,6 @@ snakemake --core all --use-conda InfoGenomeR_env
 #dataset download
 snakemake --cores all --use-conda InfoGenomeR_download
 
-#example dataset download
-snakemake --core all --use-conda InfoGenomeR_example_download
-
 # make a workspace directory
 cd ${InfoGenomeR_repo}
 workspace_dir=InfoGenomeR_workspace1
@@ -103,7 +100,7 @@ mkdir -p ${workspace_dir}
 ln -s ${PWD}/humandb/ref ${workspace_dir}/ref
 
 # use low coverage examples data
-ln -s ${PWD}/examples/fastq ${workspace_dir}/fastq
+ln -s ${PWD}/examples/T47D_hic_reads_subset ${workspace_dir}/fastq
 ```
 #### InfoGenomeR run
 ```

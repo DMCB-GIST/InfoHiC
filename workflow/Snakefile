@@ -6,7 +6,7 @@ wildcard_constraints:
 	split_rate="[0-9]*.[0-9]+|[0-9]+",
 	cancer_type="BRAIN|BRCA",
 	gpu="\\d+",
-	mode="CSCN_encoding|CSCN_decoding",
+	mode="CSCN_encoding|CSCN_decoding|OHN",
 	epoch="\\d+",
 
 
@@ -77,17 +77,24 @@ rule InfoGenomeR_processing:
         shell:  
                 "workflow/scripts/InfoGenomeR_processing.sh {input.infogenomer_input} {input.ref} {wildcards.cancer_type}"
 
+def get_optional_input(wildcards):
+        if wildcards.mode in ["OHN"]:
+                return "{root}/"
+        else:
+	        return rules.InfoGenomeR_processing.output.infogenomer_processing_output
+
 rule InfoHiC_training:
         input:  
                 hic_split_input=rules.hic_split.output.hic_split_output,
-                infogenomer_processing_input=rules.InfoGenomeR_processing.output.infogenomer_processing_output,
-                seed_file="{root}/seed_file/saved_conv_weights_dhw_5layer_1k_pool.npz"
+                seed_file="{root}/seed_file/saved_conv_weights_dhw_5layer_1k_pool.npz",
+                ref="{root}/ref/ucsc.hg19.fasta",
+                infogenomer_processing_input=get_optional_input
         output: 
                 InfoHiC_training_output=directory("{root}/InfoHiC_training.{cancer_type}/hic_{resolution}.window_{window}.split{split_idx}_rate{split_rate}/{mode}/gpu{gpu}.epoch{epoch}")
         conda:  
                 "envs/InfoHiC.yaml"
         shell:  
-                "workflow/scripts/InfoHiC_training.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.infogenomer_processing_input} {input.hic_split_input} {input.seed_file} {wildcards.epoch} {output.InfoHiC_training_output}"
+                "workflow/scripts/InfoHiC_training.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.infogenomer_processing_input} {input.hic_split_input} {input.seed_file} {wildcards.epoch} {input.ref} {output.InfoHiC_training_output}"
 
 
 rule InfoHiC_model_save:
@@ -123,6 +130,6 @@ rule InfoHiC_post_process:
         conda:
                 "envs/InfoHiC.yaml"
         shell:
-                "workflow/scripts/InfoHiC_post_process.sh {wildcards.window} {wildcards.cancer_type} {input.InfoHiC_prediction_input} {output.InfoHiC_post_process_output}"
+                "workflow/scripts/InfoHiC_post_process.sh {wildcards.window} {wildcards.resolution} {wildcards.cancer_type} {input.InfoHiC_prediction_input} {output.InfoHiC_post_process_output}"
 
 

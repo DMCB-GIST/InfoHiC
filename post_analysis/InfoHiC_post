@@ -17,6 +17,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -r|--resolution)
+      res="$2"
+      shift
+      shift
+      ;;
     -w|--window)
       window_size="$2"
       shift
@@ -26,6 +31,7 @@ while [[ $# -gt 0 ]]; do
       echo -e "Usage: InfoHiC_post <InfoHiC_output> [options]\n"
       echo -e "Options:"
       echo -e  "\t-w, --window (required) \n \t\t window size (1Mb, 2Mb)
+\t-r, --resolution (required) \n \t\t resolution (10kb, 40kb)
 \t-m, --true_matrix (optional) \n \t\t comparison with the true matrix. Enter a true matrix directory 
 \t-h, --help\n
 "
@@ -40,6 +46,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL[@]}" # restore positional parameters
+
+export RES=$res
 
 InfoHiC_output=`readlink -f "$1"`
 echo -e "InfoHiC_output = $InfoHiC_output"
@@ -57,6 +65,16 @@ else
 	trans_path=""
 fi
 echo "true_matrix = $true_matrix"
+
+if [[ $window_size == "1Mb" ]] && [[ $res == "10000" ]];then
+	f_awk=${InfoHiC_lib}/post_analysis/test_f_1Mb_10kb.awk
+	rc_awk=${InfoHiC_lib}/post_analysis/test_rc_1Mb_10kb.awk
+else
+	f_awk=${InfoHiC_lib}/post_analysis/test_f_${window_size}.awk
+	rc_awk=${InfoHiC_lib}/post_analysis/test_rc_${window_size}.awk
+fi
+
+
 
 
 window=contigs.bed.sv_window
@@ -89,8 +107,8 @@ while read -r -a l;do
 			i=$(($i+1))
 			continue;
 		fi;
-		cat $contig_f |  awk -f ${InfoHiC_lib}/post_analysis/test_f_$window_size.awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' > $i.output
-		cat $contig_rc |  awk -f ${InfoHiC_lib}/post_analysis/test_rc_$window_size.awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' >> $i.output
+		cat $contig_f |  awk -f $f_awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' > $i.output
+		cat $contig_rc |  awk -f $rc_awk | awk '{print "'${line[0]}'""\t"$1"\t""'${line[0]}'""\t"$2"\t"$3}' >> $i.output
 		Rscript ${InfoHiC_lib}/post_analysis/format_merge_contig.R $i.output $i.output.format
 		cat $i.output.format  |  awk '{if($2>0 && $4>0) print $0}' > $i.output.format.v
 		Rscript ${InfoHiC_lib}/post_analysis/tad.R $i.output.format.v 50
@@ -100,12 +118,12 @@ while read -r -a l;do
 		cat contigs.index.te| awk '{ if($3=="'${line[0]}'" && $5 >= '"$s"' && $6<= '"$e"' ) print $0}' > $i.index.te
 		Rscript ${InfoHiC_lib}/post_analysis/plot_withtad_withloop.R $i.output.format.v 40 $i.output.format.v.tad $i.index.sv $i.index.ens $i.index.se  $i.index.te all null $i.index.ref_coor
 
-		${InfoHiC_lib}/post_analysis/ICE.sh $i $window_size
+		${InfoHiC_lib}/post_analysis/ICE.sh $i $window_size $res
 		if [[ ! -s  $i.output_ice.m ]];then
                         i=$(($i+1))
 			continue;
 		fi
-		python ${InfoHiC_lib}/post_analysis/neoloop_ICE.py $i > $i.index.neoloop.m
+		python ${InfoHiC_lib}/post_analysis/neoloop_ICE.py $i $res > $i.index.neoloop.m
 		if [[ -s $i.index.sv ]] && [[ -s $i.index.neoloop.m ]];then
 			Rscript ${InfoHiC_lib}/post_analysis/neoloop_ICE_nearsv.R $i
 		fi

@@ -8,7 +8,15 @@ InfoGenomeR_dir=`readlink -f $5`
 HiC_dir=`readlink -f $6`
 SEED_FILE=$7
 MAX_EPOCH=$8
+ref=$9
 NUM_CLASSES=`echo $window | awk -v res=$res '{v=$1-res; print v/res}'`
+
+if [[ `basename $lib` == "OHN_ref" ]];then
+	encode="ACGT"
+else
+	encode="ascn_ACGT"
+fi
+
 
 # GLOBAL RUN OPTIONS ==========================================================
 SCRIPT_PATH=$lib
@@ -16,20 +24,13 @@ TRAIN_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_train
 TRAIN_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_train
 VALID_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_valid
 VALID_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_valid
-train_dir=./training_run_data_${res_string}_ascn_ACGT_rc_shift/
-log=InfoHiC_${res_string}_ascn_dcnn_rc_shift.log
-# Select Test and Validation Chromosomes
-# Test chromosomes will be checked after each epoch
-# or the specified number of chromosomes trained on
-# Validation chromosomes will be hold out entirely
-#test_chromosomes='chr1,chr8'
-#validation_chromosomes='chr13,chr12'
+train_dir=./training_run_data_${res_string}_${encode}_rc_shift/
+log=InfoHiC_${res_string}_${encode}_dcnn_rc_shift.log
 
 # Settings ===================================================================
 report_every='20'   # how often to report training loss every X steps
-num_classes=$NUM_CLASSES  # number of classes (output vector entries), 201 for 5kb models
-# 101 for 10 kb models
-bp_context=$window  # bp context processed (1 Mb + 1x bin_size)
+num_classes=$NUM_CLASSES 
+bp_context=$window 
 
 keep_prob_inner='0.8'  # keep probability (1-dropout rate for first conv module)
 
@@ -65,6 +66,7 @@ store_dtype='uint16'  # how to store the sequence
 hap1=$InfoGenomeR_dir\/hap1.fa
 hap2=$InfoGenomeR_dir\/hap2.fa
 ascn_file=$InfoGenomeR_dir\/ascn_file
+whg_fasta=$ref
 # if multiple GPUs present select a single one to run training on
 # and not block the remaining
 GPU=$gpu
@@ -73,7 +75,7 @@ GPU=$gpu
 
 max_epoch=$MAX_EPOCH
 
-python ${SCRIPT_PATH}/InfoHiC_training.py \
+CMD="python ${SCRIPT_PATH}/InfoHiC_training.py \
 	--log ${log} \
         --train_data_file ${TRAIN_DATA_FILE} \
 	--valid_data_file ${VALID_DATA_FILE} \
@@ -102,10 +104,19 @@ python ${SCRIPT_PATH}/InfoHiC_training.py \
         --seed_scheme ${seed_scheme} \
         --seed_file ${seed_file} \
         --store_dtype ${store_dtype} \
-        --hap1 ${hap1} \
-        --hap2 ${hap2} \
-        --ascn_file ${ascn_file} \
         --gpu ${GPU} \
 #	--model "./best_checkpoint-##" \
-#	--reload_model 'True'
+#	--reload_model 'True'"
 
+
+if [[ `basename $lib` == "OHN_ref" ]];then
+	CMD="$CMD \
+	     --whg_fasta ${whg_fasta}"
+else
+	CMD="$CMD \
+	     --hap1 ${hap1} \
+	     --hap2 ${hap2} \
+	     --ascn_file ${ascn_file}"
+fi
+
+$CMD
