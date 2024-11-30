@@ -9,26 +9,24 @@ export PATH=$InfoHiC_lib/InfoGenomeR_processing:$InfoHiC_lib/InfoHiC_tensorflow:
 export FRAC=0.9
 
 bp_context=$1
-cancer_type=$2
-INPUT=$3
-
-OUTPUT=`realpath $4`
+res=$2
+cancer_type=$3
+INPUT=$4
+OUTPUT=`realpath $5`
 
 mkdir -p $OUTPUT
 cd $INPUT
 
-
-if [[ $bp_context == 1040000 ]];then
+if [[ $bp_context == 1040000 ]] || [[ $bp_context == 1020000 ]] ;then
 	window_string="1Mb"
 elif [[ $bp_context == 2000000 ]];then
 	window_string="2Mb"
 else
-	echo "invalid window_size (bp). Choose 1040000 or 2000000."
+	echo "invalid window_size (bp). Choose 1040000 (40kb), 1020000 (10kb), or 2000000."
 	exit 1
 fi
 
-
-InfoHiC_post InfoGenomeR_output.${cancer_type}  -w $window_string
+InfoHiC_post InfoGenomeR_output.${cancer_type}  -w $window_string -r $res
 
 cd InfoGenomeR_output.${cancer_type}
 

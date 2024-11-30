@@ -9,6 +9,7 @@ gap_view=F
 M_plot_gap=1000000
 max_depth=as.numeric(args[2])
 
+res=as.numeric(Sys.getenv("RES"))
 
 t=read.table(args[1])
 library("reshape2")
@@ -169,7 +170,7 @@ if(args[3]!="null" && file.exists(args[3]) && file.info(args[3])$size != 0){
 #g=g+geom_segment(aes(x=V2, y=V3, xend=V4, yend=V5, colour="cyan"),data=td_line)
 
 
-g=ggplot(data = t, aes(x=V1, y=V2, fill=V3)) + geom_tile(width=40000, height=40000) + scale_fill_gradientn(colours=brewer.pal(9, 'YlOrRd')) +theme_bw() +theme(panel.border = element_blank(), panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + coord_equal()
+g=ggplot(data = t, aes(x=V1, y=V2, fill=V3)) + geom_tile(width=res, height=res) + scale_fill_gradientn(colours=brewer.pal(9, 'YlOrRd')) +theme_bw() +theme(panel.border = element_blank(), panel.grid.major = element_blank(),panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + coord_equal()
 
 
 if(args[3]!="null" && file.exists(args[3]) && file.info(args[3])$size != 0){

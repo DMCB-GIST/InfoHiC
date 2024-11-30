@@ -11,14 +11,21 @@ MAX_EPOCH=$8
 ref=$9
 NUM_CLASSES=`echo $window | awk -v res=$res '{v=$1-res; print v/res}'`
 
+if [[ `basename $lib` == "OHN_ref" ]];then
+	encode="ACGT"
+else
+	encode="ascn_ACGT"
+fi
+
+
 # GLOBAL RUN OPTIONS ==========================================================
 SCRIPT_PATH=$lib
 TRAIN_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_train
 TRAIN_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_train
 VALID_DATA_FILE=$HiC_dir\/$res_string.bed.f.for_valid
 VALID_DATA_FILE_RC=$HiC_dir\/$res_string.bed.rc.for_valid
-train_dir=./training_run_data_${res_string}_ascn_ACGT_rc_shift/
-log=InfoHiC_${res_string}_ascn_dcnn_rc_shift.log
+train_dir=./training_run_data_${res_string}_${encode}_rc_shift/
+log=InfoHiC_${res_string}_${encode}_dcnn_rc_shift.log
 
 # Settings ===================================================================
 report_every='20'   # how often to report training loss every X steps

@@ -27,9 +27,8 @@ InfoGenomeR_dir=`readlink -f $5`
 HiC_dir=`readlink -f $6`
 SEED_FILE=`readlink -f $7`
 MAX_EPOCH=$8
-OUTPUT=$9
-REF=${10}
-
+REF=`readlink -f $9`
+OUTPUT=${10}
 
 mkdir -p $OUTPUT
 cd $OUTPUT

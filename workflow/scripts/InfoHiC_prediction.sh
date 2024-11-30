@@ -30,14 +30,14 @@ cp -r $INFOGENOMER_INPUT $OUTPUT
 cd $OUTPUT
 
 
-if [[ $bp_context == 1040000 ]];then
+if [[ $bp_context == 1040000 ]] || [[ $bp_context == 1020000 ]] ;then
 	window_string="1Mb"
 elif [[ $bp_context == 2000000 ]];then
 	window_string="2Mb"
 else
-	echo "invalid window_size (bp). Choose 1040000 or 2000000."
+	echo "invalid window_size (bp). Choose 1040000 (40kb), 1020000 (10kb), or 2000000."
 	exit 1
 fi
 
 INFOGENOMER_INPUT=`basename $INFOGENOMER_INPUT`
-InfoHiC_test $INFOGENOMER_INPUT -m $mode -w $window_string -g $gpu -c $model\/contig_model
+InfoHiC_test $INFOGENOMER_INPUT -r $res -m $mode -w $window_string -g $gpu -c $model\/contig_model
