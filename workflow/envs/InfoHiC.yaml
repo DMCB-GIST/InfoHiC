@@ -12,6 +12,7 @@ dependencies:
         - r-ggplot2
         - r-plyr
         - r-dplyr
+        - bedtools
         - r-rcolorbrewer
         - r-reshape2
         - r-ggforce
