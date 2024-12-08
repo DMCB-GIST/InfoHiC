@@ -11,6 +11,8 @@ MAX_EPOCH=$8
 ref=$9
 NUM_CLASSES=`echo $window | awk -v res=$res '{v=$1-res; print v/res}'`
 
+PRETRAINED_MODEL=`readlink -f ${10}`
+
 if [[ `basename $lib` == "OHN_ref" ]];then
 	encode="ACGT"
 else
@@ -104,10 +106,15 @@ CMD="python ${SCRIPT_PATH}/InfoHiC_training.py \
         --seed_scheme ${seed_scheme} \
         --seed_file ${seed_file} \
         --store_dtype ${store_dtype} \
-        --gpu ${GPU} \
-#	--model "./best_checkpoint-##" \
-#	--reload_model 'True'"
+        --gpu ${GPU}"
 
+
+if [[ -s $PRETRAINED_MODEL ]];then
+	CMD="$CMD \
+		--model "$PRETRAINED_MODEL" \
+                --reload_model 'continue'"
+
+fi
 
 if [[ `basename $lib` == "OHN_ref" ]];then
 	CMD="$CMD \

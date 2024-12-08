@@ -96,6 +96,22 @@ rule InfoHiC_training:
         shell:  
                 "workflow/scripts/InfoHiC_training.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.infogenomer_processing_input} {input.hic_split_input} {input.seed_file} {wildcards.epoch} {input.ref} {output.InfoHiC_training_output}"
 
+rule InfoHiC_fine_tuning:
+        input:
+                hic_split_input=rules.hic_split.output.hic_split_output,
+                seed_file="{root}/seed_file/saved_conv_weights_dhw_5layer_1k_pool.npz",
+                ref="{root}/ref/ucsc.hg19.fasta",
+                infogenomer_processing_input=get_optional_input,
+                InfoHiC_training_input="{root}/InfoHiC_training.{cancer_type}/hic_{resolution}.window_{window}.split{split_idx}_rate{split_rate}/{mode}/gpu{gpu}.epoch{epoch}/best_checkpoint.index",
+                target_bed="{root}/target.bed"
+        output:
+                InfoHiC_training_output=directory("{root}/InfoHiC_training.{cancer_type}/hic_{resolution}.window_{window}.split{split_idx}_rate{split_rate}/{mode}/gpu{gpu}.epoch{epoch}.fine_tuning")
+        conda:
+                "envs/InfoHiC.yaml"
+        shell:
+                "workflow/scripts/InfoHiC_training.sh {wildcards.gpu} {wildcards.mode} {wildcards.resolution} {wildcards.window} {input.infogenomer_processing_input} {input.hic_split_input} {input.seed_file} {wildcards.epoch} {input.ref} {output.InfoHiC_training_output} {input.InfoHiC_training_input} {input.target_bed}"
+
+
 
 rule InfoHiC_model_save:
         input:  
