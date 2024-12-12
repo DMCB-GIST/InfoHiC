@@ -20,6 +20,7 @@ dependencies:
         - cudatoolkit=11.2
         - cudnn=8.1.0
         - python=3.8.0
+        - bioconda::iced=0.5.10=py38h803c66d_0
         - pip
         - pip:
                 - tensorflow-gpu==2.8.0
